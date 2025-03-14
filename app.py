@@ -183,8 +183,7 @@ if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
     st.session_state.map_center = [clicked_lat, clicked_lng]
-    if map_data.get("zoom"):
-        st.session_state.map_zoom = map_data["zoom"]
+    st.session_state.map_zoom = map_data["zoom"]
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
