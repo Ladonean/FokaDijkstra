@@ -179,15 +179,15 @@ def create_map():
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
 # Aktualizacja widoku mapy w st.session_state – tylko przy kliknięciu
-if map_data.get("last_clicked"):
-    if map_data.get("center"):
-        center_val = map_data["center"]
-        if isinstance(center_val, dict):
-            st.session_state.map_center = [center_val["lat"], center_val["lng"]]
-        else:
-            st.session_state.map_center = center_val
-    if map_data.get("zoom"):
-        st.session_state.map_zoom = map_data["zoom"]
+# if map_data.get("last_clicked"):
+#     if map_data.get("center"):
+#         center_val = map_data["center"]
+#         if isinstance(center_val, dict):
+#             st.session_state.map_center = [center_val["lat"], center_val["lng"]]
+#         else:
+#             st.session_state.map_center = center_val
+#     if map_data.get("zoom"):
+#         st.session_state.map_zoom = map_data["zoom"]
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
