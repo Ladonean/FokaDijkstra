@@ -55,7 +55,7 @@ transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
     lon, lat = transformer.transform(x, y)
-    latlon_nodes[node] = (lat, lon)  # Folium oczekuje [lat, lon]
+    latlon_nodes[node] = (lat, lon)
 
 # ---------------------------
 # Funkcja obliczająca odległość (Haversine) w metrach
@@ -103,7 +103,7 @@ if st.button("Resetuj trasę"):
 def create_map():
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Dodajemy krawędzie (graf) i etykiety (odległość na środku linii)
+    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii, pozioma
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -133,7 +133,7 @@ def create_map():
         )
         folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
-    # Dodajemy markery z popupem zawierającym tekst i obrazek
+    # Dodajemy markery – z popupem, który zawiera tekst i obrazek
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
@@ -175,11 +175,12 @@ def create_map():
 
     return m
 
-# Wyświetlamy mapę przy użyciu streamlit-folium z returned_objects ustawionymi tylko na last_clicked
+# Wyświetlamy mapę przy użyciu streamlit-folium – zwracamy tylko last_clicked, by nie reagować na zmiany widoku
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
 
-# Aktualizacja widoku mapy (center i zoom) – wykonujemy to tylko przy kliknięciu
+# Aktualizacja widoku mapy w st.session_state – TYLKO przy kliknięciu
 if map_data.get("last_clicked"):
+    # Uaktualniamy centrum i zoom tylko po kliknięciu (po dodaniu węzła)
     if map_data.get("center"):
         center_val = map_data["center"]
         if isinstance(center_val, dict):
@@ -193,7 +194,7 @@ if map_data.get("last_clicked"):
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
 
-# Wyświetlenie upływającego czasu (jako zmienna) tylko przy ostatnim kliknięciu
+# Wyświetlenie upływającego czasu jako zmienna w sidebarze (aktualizowane przy każdym przebiegu)
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
     st.write(f"Elapsed time: {elapsed:.1f} seconds")
@@ -210,6 +211,8 @@ if map_data.get("last_clicked"):
             snapped_node = node
             break
     if snapped_node is not None:
+        # Aktualizujemy centrum mapy na położenie kliknięcia (tylko przy kliknięciu)
+        st.session_state.map_center = [clicked_lat, clicked_lng]
         if st.session_state.route:
             last_node = st.session_state.route[-1]
             allowed_nodes = list(G.neighbors(last_node))
