@@ -94,7 +94,7 @@ def create_map():
     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
-
+    
     # Dodajemy krawędzie (graf)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
@@ -106,7 +106,7 @@ def create_map():
             weight=2,
             tooltip=f"{distance} km"
         ).add_to(m)
-
+    
     # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
@@ -137,7 +137,7 @@ def create_map():
             tooltip=f"Node {node}",
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
-
+    
     # Jeśli trasa jest zdefiniowana, rysujemy żółtą linię
     if st.session_state.route:
         route_coords = [latlon_nodes[node] for node in st.session_state.route if node in latlon_nodes]
@@ -146,19 +146,17 @@ def create_map():
             color="yellow",
             weight=4
         ).add_to(m)
-
+    
     return m
 
-# Streamlit tytuł
-st.title("Znajdź najkrótszą trasę")
 # Wyświetlamy mapę przy użyciu streamlit-folium
-#map_data = st_folium(create_map(), width=400, height=300, returned_objects=["last_clicked"])
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
-# Dodajemy obsługę kliknięć – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
-if map_data["last_clicked"]:
+
+# Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
+if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
-    threshold = 300  # 50 metrów
+    threshold = 300  # 300 metrów
     snapped_node = None
     for node, (lat, lon) in latlon_nodes.items():
         d = haversine_distance(clicked_lat, clicked_lng, lat, lon)
@@ -166,24 +164,17 @@ if map_data["last_clicked"]:
             snapped_node = node
             break
     if snapped_node is not None:
-        # Jeśli trasa nie jest pusta, sprawdzamy, czy nowy węzeł należy do 3 najbliższych od ostatniego węzła
         if st.session_state.route:
             last_node = st.session_state.route[-1]
-            distances = []
-            for other_num, other_coord in punkty.items():
-                if other_num != last_node:
-                    d_val = euclidean_distance_km(punkty[last_node], other_coord)
-                    distances.append((other_num, d_val))
-            distances.sort(key=lambda x: x[1])
-            allowed_nodes = [t[0] for t in distances[:3]]
+            # Zamiast obliczać allowed_nodes z 3 najbliższych, teraz pozwalamy na wszystkie powiązane (sąsiadów) z ostatniego węzła
+            allowed_nodes = list(G.neighbors(last_node))
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
                     st.session_state.route.append(snapped_node)
                     st.success(f"Dodano węzeł {snapped_node} do trasy")
             else:
                 st.warning(
-                    f"Węzeł {snapped_node} nie jest jednym z 3 najbliższych węzłów do węzła {last_node}. "
-                    f"Dozwolone: {allowed_nodes}"
+                    f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}. Dozwolone: {allowed_nodes}"
                 )
         else:
             st.session_state.route.append(snapped_node)
