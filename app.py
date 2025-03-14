@@ -61,7 +61,7 @@ for node, (x, y) in punkty.items():
 # Funkcja obliczająca odległość (Haversine) w metrach
 # ---------------------------
 def haversine_distance(lat1, lon1, lat2, lon2):
-    R = 6371000  # Promień Ziemi w metrach
+    R = 6371000
     from math import radians, sin, cos, sqrt, atan2
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
@@ -80,7 +80,7 @@ image_base64 = get_image_base64("node_image.png")
 image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" height="200" style="object-fit:contain;">'
 
 # ---------------------------
-# Inicjalizacja stanu sesji dla trasy oraz widoku mapy i czasu startu
+# Inicjalizacja stanu sesji dla trasy, widoku mapy i start_time licznika
 # ---------------------------
 if "route" not in st.session_state:
     st.session_state.route = []
@@ -189,14 +189,14 @@ if map_data.get("last_clicked"):
     if map_data.get("zoom"):
         st.session_state.map_zoom = map_data["zoom"]
 
-# Rozpoczęcie licznika po pierwszym dodaniu węzła
+# Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
 
-# Wyświetlenie upływającego czasu jako zmienna (aktualizowana przy każdym przebiegu)
+# Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu (bez auto-refreshu)
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
-    st.write(f"Elapsed time: {elapsed:.1f} seconds")
+    st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
