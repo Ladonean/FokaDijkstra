@@ -273,7 +273,7 @@ if map_data.get("last_clicked"):
                 st.warning(f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}")
         else:
             st.session_state.route.append(snapped_node)
-            **st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")**
+            st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")
 
 ############################
 # Obliczanie łącznej drogi użytkownika
