@@ -104,7 +104,6 @@ def create_map():
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
-            tooltip=f"{distance} km"
         )
         line.add_to(m)
         # Obliczamy środek linii
@@ -117,7 +116,6 @@ def create_map():
                     font-size: 12px; 
                     font-weight: bold; 
                     color: black;
-                    background: rgba(255,255,255,0.7);
                     padding: 2px 4px;
                     border-radius: 0px;
                     transform: rotate(0deg);
