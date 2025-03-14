@@ -10,6 +10,9 @@ from folium import IFrame, Popup, Element
 from folium.plugins import PolyLineTextPath
 from streamlit_autorefresh import st_autorefresh
 
+# Uruchamiamy auto-refresh co 1 sekundę (odświeżamy całą aplikację co 1000 ms)
+st_autorefresh(interval=1000, limit=0, key="timer")
+
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
 # ---------------------------
@@ -97,12 +100,6 @@ if "start_time" not in st.session_state:
 if st.button("Resetuj trasę"):
     st.session_state.route = []
     st.session_state.start_time = None
-
-# Uruchamiamy auto-refresh co 1 sekundę, aby zaktualizować licznik czasu
-st_autorefresh = st.experimental_memo(lambda: None)  # workaround
-# Możesz też użyć:
-# from streamlit_autorefresh import st_autorefresh
-# st_autorefresh(interval=1000, limit=None, key="timer")
 
 # ---------------------------
 # Funkcja tworząca mapę Folium z zachowaniem widoku
