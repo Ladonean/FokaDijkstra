@@ -252,7 +252,7 @@ if st.session_state.start_time is not None:
 if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
-    threshold = 300  # 300 metrów
+    threshold = 400  # 300 metrów
     snapped_node = None
     for node, (lat, lon) in latlon_nodes.items():
         dx = (lat - clicked_lat) * 111000
@@ -268,12 +268,12 @@ if map_data.get("last_clicked"):
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
                     st.session_state.route.append(snapped_node)
-                    st.success(f"Dodano węzeł {{snapped_node}} do trasy")
+                    **st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")**
             else:
-                st.warning(f"Węzeł {{snapped_node}} nie jest powiązany z węzłem {{last_node}}")
+                st.warning(f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}")
         else:
             st.session_state.route.append(snapped_node)
-            st.success(f"Dodano węzeł {{snapped_node}} do trasy")
+            **st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")**
 
 ############################
 # Obliczanie łącznej drogi użytkownika
