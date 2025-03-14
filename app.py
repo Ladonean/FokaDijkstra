@@ -6,6 +6,7 @@ import base64
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
+from folium.plugins import PolyLineTextPath  # importujemy plugin
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -94,19 +95,21 @@ def create_map():
     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
-    
+
     # Dodajemy krawędzie (graf)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distance = data["weight"]
-        folium.PolyLine(
+        line = folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
-            tooltip=f"{distance} km"
-        ).add_to(m)
-    
+        )
+        line.add_to(m)
+        # Dodajemy etykietę tekstową na linii z odległością
+        PolyLineTextPath(line, f" {distance} km ", repeat=True, offset=7, attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '10px'}).add_to(m)
+
     # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
@@ -114,7 +117,7 @@ def create_map():
             {image_html}
         """
         iframe = IFrame(html=popup_html, width=150, height=240)
-        popup = Popup(iframe, max_width=120)
+        popup = Popup(iframe, max_width=150)
         marker_html = f"""
             <div style="text-align: center;">
               <div style="
@@ -137,7 +140,7 @@ def create_map():
             tooltip=f"Node {node}",
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
-    
+
     # Jeśli trasa jest zdefiniowana, rysujemy żółtą linię
     if st.session_state.route:
         route_coords = [latlon_nodes[node] for node in st.session_state.route if node in latlon_nodes]
@@ -146,7 +149,7 @@ def create_map():
             color="yellow",
             weight=4
         ).add_to(m)
-    
+
     return m
 
 # Wyświetlamy mapę przy użyciu streamlit-folium
@@ -166,7 +169,7 @@ if map_data.get("last_clicked"):
     if snapped_node is not None:
         if st.session_state.route:
             last_node = st.session_state.route[-1]
-            # Zamiast obliczać allowed_nodes z 3 najbliższych, teraz pozwalamy na wszystkie powiązane (sąsiadów) z ostatniego węzła
+            # Pobieramy sąsiadów z grafu
             allowed_nodes = list(G.neighbors(last_node))
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
