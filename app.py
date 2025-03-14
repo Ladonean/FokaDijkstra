@@ -116,7 +116,7 @@ def create_map():
     # Tworzymy mapę w oparciu o zapamiętane centrum i zoom
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Dodajemy krawędzie (graf)
+    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii, pozioma
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -128,6 +128,23 @@ def create_map():
             tooltip=f"{distance} km"
         )
         line.add_to(m)
+        mid_lat = (lat1 + lat2) / 2
+        mid_lon = (lon1 + lon2) / 2
+        distance_icon = folium.DivIcon(
+            html=f"""
+                <div style="
+                    font-size: 16px; 
+                    font-weight: bold; 
+                    color: black;
+                    padding: 2px 4px;
+                    border-radius: 0px;
+                    transform: rotate(0deg);
+                    ">
+                    {distance}
+                </div>
+            """
+        )
+        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
     # Dodajemy markery węzłów
     for node, (lat, lon) in latlon_nodes.items():
