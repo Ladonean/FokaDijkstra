@@ -212,7 +212,7 @@ if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
     st.session_state.map_center = [clicked_lat, clicked_lng]
-    st.session_state.map_zoom = 15
+    st.session_state.map_zoom = 12
 
 ############################
 # Rozpoczęcie licznika – przy pierwszym dodaniu węzła
