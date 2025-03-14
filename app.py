@@ -176,7 +176,8 @@ def create_map():
     return m
 
 # Wyświetlamy mapę przy użyciu streamlit-folium – zwracamy tylko "last_clicked"
-map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
+
+map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
 # Aktualizacja widoku mapy – tylko przy kliknięciu
 if map_data.get("last_clicked"):
@@ -184,6 +185,10 @@ if map_data.get("last_clicked"):
     clicked_lng = map_data["last_clicked"]["lng"]
     # Aktualizujemy centrum mapy na położenie kliknięcia
     st.session_state.map_center = [clicked_lat, clicked_lng]
+    # Aktualizujemy poziom zoomu
+    if map_data.get("zoom"):
+        st.session_state.map_zoom = map_data["zoom"]
+
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
