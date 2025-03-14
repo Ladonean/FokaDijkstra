@@ -6,7 +6,7 @@ import base64
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
-from folium.plugins import PolyLineTextPath  # importujemy plugin
+from folium.plugins import PolyLineTextPath  # importujemy plugin do tekstu na linii
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -96,7 +96,7 @@ def create_map():
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
 
-    # Dodajemy krawędzie (graf)
+    # Dodajemy krawędzie (graf) z etykietą odległości (w km) wyświetlaną raz na linii
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -105,12 +105,19 @@ def create_map():
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
+            tooltip=f"{distance} km"
         )
         line.add_to(m)
-        # Dodajemy etykietę tekstową na linii z odległością
-        PolyLineTextPath(line, f" {distance} km ", repeat=True, offset=7, attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '10px'}).add_to(m)
+        # Dodajemy etykietę na linii – wyświetlana tylko raz (repeat=False) z większą czcionką
+        PolyLineTextPath(
+            line,
+            f" {distance} km ",
+            repeat=False,
+            offset=7,
+            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px'}
+        ).add_to(m)
 
-    # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
+    # Dodajemy markery – z popupem zawierającym tekst i obrazek
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
@@ -169,7 +176,6 @@ if map_data.get("last_clicked"):
     if snapped_node is not None:
         if st.session_state.route:
             last_node = st.session_state.route[-1]
-            # Pobieramy sąsiadów z grafu
             allowed_nodes = list(G.neighbors(last_node))
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
