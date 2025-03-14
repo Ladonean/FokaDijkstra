@@ -5,3 +5,4 @@ networkx
 pyproj
 matplotlib
 numpy
+streamlit-autorefresh
