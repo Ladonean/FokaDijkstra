@@ -149,6 +149,8 @@ def create_map():
 
     return m
 
+# Streamlit tytuł
+st.title("Znajdź najkrótszą trasę")
 # Wyświetlamy mapę przy użyciu streamlit-folium
 #map_data = st_folium(create_map(), width=400, height=300, returned_objects=["last_clicked"])
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
