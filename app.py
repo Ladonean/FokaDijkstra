@@ -114,15 +114,15 @@ def create_map():
         distance_icon = folium.DivIcon(
             html=f"""
                 <div style="
-                    font-size: 16px; 
+                    font-size: 12px; 
                     font-weight: bold; 
                     color: black;
                     background: rgba(255,255,255,0.7);
                     padding: 2px 4px;
-                    border-radius: 3px;
+                    border-radius: 0px;
                     transform: rotate(0deg);
                     ">
-                    {distance} km
+                    {distance}
                 </div>
             """
         )
