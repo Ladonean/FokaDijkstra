@@ -176,7 +176,7 @@ def create_map():
     return m
 
 # Wyświetlamy mapę przy użyciu streamlit-folium i pobieramy zwrócone dane
-map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
+map_data = st_folium(create_map(), width=1000, height=600)
 
 # Aktualizacja widoku mapy w st.session_state – tylko przy kliknięciu
 # if map_data.get("last_clicked"):
