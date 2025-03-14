@@ -203,7 +203,7 @@ def create_map():
 ############################
 # Wyświetlamy mapę – zwracamy tylko "last_clicked"
 ############################
-map_data = st_folium(create_map(), width=600, height=400, returned_objects=["last_clicked"])
+map_data = st_folium(create_map(), width=800, height=500, returned_objects=["last_clicked"])
 
 ############################
 # Aktualizacja widoku mapy – tylko przy kliknięciu (centrum=klik, zoom=15)
