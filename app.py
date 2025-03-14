@@ -150,7 +150,7 @@ def create_map():
     return m
 
 # Wyświetlamy mapę przy użyciu streamlit-folium
-map_data = st_folium(create_map(), width=1600, height=800, returned_objects=["last_clicked"])
+map_data = st_folium(create_map(), width=400, height=300, returned_objects=["last_clicked"])
 
 # Dodajemy obsługę kliknięć – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data["last_clicked"]:
