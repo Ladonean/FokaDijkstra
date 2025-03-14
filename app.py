@@ -268,7 +268,7 @@ if map_data.get("last_clicked"):
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
                     st.session_state.route.append(snapped_node)
-                    **st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")**
+                    st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")
             else:
                 st.warning(f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}")
         else:
