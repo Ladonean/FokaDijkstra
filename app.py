@@ -175,16 +175,11 @@ def create_map():
 # Wyświetlamy mapę przy użyciu streamlit-folium i pobieramy zwrócone dane
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
-# Aktualizacja widoku mapy w st.session_state
+# Aktualizujemy widok mapy w st.session_state
 if map_data.get("center"):
-    center_val = map_data["center"]
-    if isinstance(center_val, dict):
-        st.session_state.map_center = [center_val["lat"], center_val["lng"]]
-    else:
-        st.session_state.map_center = center_val
+    st.session_state.map_center = [map_data["center"]["lat"], map_data["center"]["lng"]]
 if map_data.get("zoom"):
     st.session_state.map_zoom = map_data["zoom"]
-
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
