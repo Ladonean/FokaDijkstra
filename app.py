@@ -55,7 +55,7 @@ transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
     lon, lat = transformer.transform(x, y)
-    latlon_nodes[node] = (lat, lon)  # Folium oczekuje [lat, lon]
+    latlon_nodes[node] = (lat, lon)
 
 # ---------------------------
 # Funkcja obliczająca odległość (Haversine) w metrach
@@ -193,10 +193,10 @@ if map_data.get("last_clicked"):
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
 
-# Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu (bez auto-refreshu)
+# Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
-    st.write(f"Elapsed time: {elapsed:.1f} seconds")
+    st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
