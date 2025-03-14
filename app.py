@@ -3,15 +3,10 @@ from streamlit_folium import st_folium
 import folium
 import math
 import base64
-import time
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
 from folium.plugins import PolyLineTextPath
-from streamlit_autorefresh import st_autorefresh
-
-# Uruchamiamy auto-refresh co 1 sekundę (odświeżamy całą aplikację co 1000 ms)
-st_autorefresh(interval=1000, limit=0, key="timer")
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -94,12 +89,9 @@ if "map_center" not in st.session_state:
     st.session_state.map_center = [avg_lat, avg_lon]
 if "map_zoom" not in st.session_state:
     st.session_state.map_zoom = 12
-if "start_time" not in st.session_state:
-    st.session_state.start_time = None
 
 if st.button("Resetuj trasę"):
     st.session_state.route = []
-    st.session_state.start_time = None
 
 # ---------------------------
 # Funkcja tworząca mapę Folium z zachowaniem widoku
@@ -192,14 +184,6 @@ if map_data.get("last_clicked"):
             st.session_state.map_center = center_val
     if map_data.get("zoom"):
         st.session_state.map_zoom = map_data["zoom"]
-
-# Rozpoczęcie licznika, gdy trasa zostanie rozpoczęta (pierwszy węzeł dodany)
-if st.session_state.route and st.session_state.start_time is None:
-    st.session_state.start_time = time.time()
-
-if st.session_state.start_time is not None:
-    elapsed = time.time() - st.session_state.start_time
-    st.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
