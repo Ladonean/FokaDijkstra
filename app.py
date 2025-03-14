@@ -190,13 +190,13 @@ map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["la
 #         st.session_state.map_zoom = map_data["zoom"]
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
-if st.session_state.route and st.session_state.start_time is None:
-    st.session_state.start_time = time.time()
+# if st.session_state.route and st.session_state.start_time is None:
+#     st.session_state.start_time = time.time()
 
-# Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu
-if st.session_state.start_time is not None:
-    elapsed = time.time() - st.session_state.start_time
-    st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
+# # Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu
+# if st.session_state.start_time is not None:
+#     elapsed = time.time() - st.session_state.start_time
+#     st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
