@@ -116,7 +116,7 @@ def create_map():
     # Tworzymy mapę w oparciu o zapamiętane centrum i zoom
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii, pozioma
+    # Dodajemy krawędzie (graf)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -128,23 +128,6 @@ def create_map():
             tooltip=f"{distance} km"
         )
         line.add_to(m)
-        mid_lat = (lat1 + lat2) / 2
-        mid_lon = (lon1 + lon2) / 2
-        distance_icon = folium.DivIcon(
-            html=f"""
-                <div style="
-                    font-size: 16px; 
-                    font-weight: bold; 
-                    color: black;
-                    padding: 2px 4px;
-                    border-radius: 0px;
-                    transform: rotate(0deg);
-                    ">
-                    {distance}
-                </div>
-            """
-        )
-        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
     # Dodajemy markery węzłów
     for node, (lat, lon) in latlon_nodes.items():
@@ -278,10 +261,13 @@ if 28 in st.session_state.route:
     st.session_state.show_shortest = True
     # Obliczamy najkrótszą trasę
     if nx.has_path(G, 12, 28):
+        shortest_path_12_28 = nx.shortest_path(G, 12, 28, weight='weight')
+        st.write(f"Najkrótsza możliwa trasa (12 -> 28): {shortest_path_12_28}")
         shortest_length_12_28 = nx.shortest_path_length(G, 12, 28, weight='weight')
         st.write("\nGratulacje! Dotarłeś do węzła 28.")
         st.write(f"Najkrótsza możliwa trasa (12 -> 28) ma długość: {shortest_length_12_28:.1f} km")
     else:
         st.write("Brak ścieżki pomiędzy 12 a 28.")
+
 
 st.write("Wybrana trasa użytkownika:", st.session_state.route)
