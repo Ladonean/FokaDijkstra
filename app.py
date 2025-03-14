@@ -84,6 +84,7 @@ image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" heigh
 if "route" not in st.session_state:
     st.session_state.route = []
 if "map_center" not in st.session_state:
+    # Domyślne centrum: średnia współrzędnych
     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     st.session_state.map_center = [avg_lat, avg_lon]
@@ -99,7 +100,7 @@ if st.button("Resetuj trasę"):
 def create_map():
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii
+    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii, pozioma
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -113,14 +114,21 @@ def create_map():
         line.add_to(m)
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
-        PolyLineTextPath(
-            line,
-            f"{distance}",
-            repeat=False,
-            center=True,
-            offset=7,
-            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px'}
-        ).add_to(m)
+        distance_icon = folium.DivIcon(
+            html=f"""
+                <div style="
+                    font-size: 16px; 
+                    font-weight: bold; 
+                    color: black;
+                    padding: 2px 4px;
+                    border-radius: 0px;
+                    transform: rotate(0deg);
+                    ">
+                    {distance}
+                </div>
+            """
+        )
+        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
     # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
     for node, (lat, lon) in latlon_nodes.items():
@@ -153,7 +161,7 @@ def create_map():
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
 
-    # Rysujemy trasę (żółta linia) jeśli istnieje
+    # Rysujemy trasę (żółta linia), jeśli jest zdefiniowana
     if st.session_state.route:
         route_coords = [latlon_nodes[node] for node in st.session_state.route if node in latlon_nodes]
         folium.PolyLine(
@@ -164,13 +172,12 @@ def create_map():
 
     return m
 
-# Wyświetlamy mapę przy użyciu streamlit-folium
+# Wyświetlamy mapę przy użyciu streamlit-folium i pobieramy zwrócone dane
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
-# Aktualizacja widoku mapy (centrum i zoom)
+# Aktualizujemy widok mapy w st.session_state
 if map_data.get("center"):
-    center = map_data["center"]
-    st.session_state.map_center = [center["lat"], center["lng"]]
+    st.session_state.map_center = [map_data["center"]["lat"], map_data["center"]["lng"]]
 if map_data.get("zoom"):
     st.session_state.map_zoom = map_data["zoom"]
 
