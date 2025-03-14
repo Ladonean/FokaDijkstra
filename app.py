@@ -156,7 +156,7 @@ map_data = st_folium(create_map(), width=800, height=700, returned_objects=["las
 if map_data["last_clicked"]:
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
-    threshold = 200  # 50 metrów
+    threshold = 300  # 50 metrów
     snapped_node = None
     for node, (lat, lon) in latlon_nodes.items():
         d = haversine_distance(clicked_lat, clicked_lng, lat, lon)
