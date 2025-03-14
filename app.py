@@ -6,7 +6,7 @@ import base64
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
-from folium.plugins import PolyLineTextPath  # importujemy plugin do tekstu na linii
+from folium.plugins import PolyLineTextPath
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -54,7 +54,7 @@ transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
     lon, lat = transformer.transform(x, y)
-    latlon_nodes[node] = (lat, lon)  # Folium oczekuje [lat, lon]
+    latlon_nodes[node] = (lat, lon)
 
 # ---------------------------
 # Funkcja obliczająca odległość (Haversine) w metrach
@@ -75,9 +75,7 @@ def get_image_base64(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Zakładamy, że mamy obrazek "node_image.png" w tym samym folderze
 image_base64 = get_image_base64("node_image.png")
-# Ustawiamy obrazek o maksymalnych wymiarach 100 x 200 pikseli
 image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" height="200" style="object-fit:contain;">'
 
 # ---------------------------
@@ -96,7 +94,7 @@ def create_map():
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
 
-    # Dodajemy krawędzie (graf) z etykietą odległości (w km) wyświetlaną raz na linii
+    # Dodajemy krawędzie (graf)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -108,16 +106,17 @@ def create_map():
             tooltip=f"{distance} km"
         )
         line.add_to(m)
-        # Dodajemy etykietę na linii – wyświetlana tylko raz (repeat=False) z większą czcionką
+        # Dodajemy etykietę na środku linii
         PolyLineTextPath(
             line,
             f" {distance} km ",
             repeat=False,
+            center=True,
             offset=7,
-            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px'}
+            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px', 'orientation': 'horizontal'}
         ).add_to(m)
 
-    # Dodajemy markery – z popupem zawierającym tekst i obrazek
+    # Dodajemy markery – z popupem, który zawiera tekst i obrazek
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
