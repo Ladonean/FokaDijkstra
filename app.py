@@ -6,7 +6,6 @@ import base64
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
-from folium.plugins import PolyLineTextPath
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -54,7 +53,7 @@ transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
     lon, lat = transformer.transform(x, y)
-    latlon_nodes[node] = (lat, lon)
+    latlon_nodes[node] = (lat, lon)  # Folium oczekuje [lat, lon]
 
 # ---------------------------
 # Funkcja obliczająca odległość (Haversine) w metrach
@@ -75,7 +74,9 @@ def get_image_base64(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
+# Zakładamy, że mamy obrazek "node_image.png" w tym samym folderze
 image_base64 = get_image_base64("node_image.png")
+# Ustawiamy obrazek o maksymalnych wymiarach 100 x 200 pikseli
 image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" height="200" style="object-fit:contain;">'
 
 # ---------------------------
@@ -106,17 +107,28 @@ def create_map():
             tooltip=f"{distance} km"
         )
         line.add_to(m)
-        # Dodajemy etykietę na środku linii
-        PolyLineTextPath(
-            line,
-            f" {distance} km ",
-            repeat=False,
-            center=True,
-            offset=7,
-            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px', 'orientation': 'horizontal'}
-        ).add_to(m)
+        # Obliczamy środek linii
+        mid_lat = (lat1 + lat2) / 2
+        mid_lon = (lon1 + lon2) / 2
+        # Dodajemy marker (DivIcon) z tekstem odległości, wymuszając poziomą orientację
+        distance_icon = folium.DivIcon(
+            html=f"""
+                <div style="
+                    font-size: 16px; 
+                    font-weight: bold; 
+                    color: black;
+                    background: rgba(255,255,255,0.7);
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    transform: rotate(0deg);
+                    ">
+                    {distance} km
+                </div>
+            """
+        )
+        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
-    # Dodajemy markery – z popupem, który zawiera tekst i obrazek
+    # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
