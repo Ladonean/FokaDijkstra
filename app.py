@@ -175,26 +175,21 @@ def create_map():
 
     return m
 
-# Wyświetlamy mapę przy użyciu streamlit-folium – zwracamy tylko last_clicked, by nie reagować na zmiany widoku
+# Wyświetlamy mapę przy użyciu streamlit-folium – zwracamy tylko "last_clicked"
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
 
-# Aktualizacja widoku mapy w st.session_state – TYLKO przy kliknięciu
+# Aktualizacja widoku mapy – tylko przy kliknięciu
 if map_data.get("last_clicked"):
-    # Uaktualniamy centrum i zoom tylko po kliknięciu (po dodaniu węzła)
-    if map_data.get("center"):
-        center_val = map_data["center"]
-        if isinstance(center_val, dict):
-            st.session_state.map_center = [center_val["lat"], center_val["lng"]]
-        else:
-            st.session_state.map_center = center_val
-    if map_data.get("zoom"):
-        st.session_state.map_zoom = map_data["zoom"]
+    clicked_lat = map_data["last_clicked"]["lat"]
+    clicked_lng = map_data["last_clicked"]["lng"]
+    # Aktualizujemy centrum mapy na położenie kliknięcia
+    st.session_state.map_center = [clicked_lat, clicked_lng]
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
 
-# Wyświetlenie upływającego czasu jako zmienna w sidebarze (aktualizowane przy każdym przebiegu)
+# Wyświetlenie upływającego czasu jako zmienna (aktualizowana przy każdej interakcji)
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
     st.write(f"Elapsed time: {elapsed:.1f} seconds")
@@ -211,8 +206,6 @@ if map_data.get("last_clicked"):
             snapped_node = node
             break
     if snapped_node is not None:
-        # Aktualizujemy centrum mapy na położenie kliknięcia (tylko przy kliknięciu)
-        st.session_state.map_center = [clicked_lat, clicked_lng]
         if st.session_state.route:
             last_node = st.session_state.route[-1]
             allowed_nodes = list(G.neighbors(last_node))
