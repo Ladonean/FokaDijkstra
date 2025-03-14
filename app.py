@@ -33,6 +33,42 @@ punkty = {
 }
 
 ############################
+# Nazwy węzłów – by wyświetlać nazwy zamiast numerów
+############################
+node_names = {
+    1: "PG",
+    2: "Parkrun Gdańsk Południe",
+    3: "Pomnik Obrońców Wybrzeża",
+    4: "Bursztynowy",
+    5: "Góra Gradowa",
+    6: "Posejdon",
+    7: "Galeria Bałtycka",
+    8: "UG",
+    9: "Parkrun Gdańsk Osowa",
+    10: "Parkrun Gdańsk Regana",
+    11: "Trójmiejski Park Krajobrazowy",
+    12: "Lotnisko",
+    13: "Las Otomiński",
+    14: "Jezioro Jasień",
+    15: "Kozacza Góra",
+    16: "Park Oruński",
+    17: "Stocznia Remontowa",
+    18: "Rafineria",
+    19: "Pomnik Mickiewicza",
+    20: "Dwór Olszynka",
+    21: "Park Ferberów",
+    22: "Sanktuarium Matemblewo",
+    23: "ZOO",
+    24: "Zbiornik Łabędzia",
+    25: "Plaża Stogi",
+    26: "Molo Brzeźno",
+    27: "Plaża SObieszewo",
+    28: "Punkt Widokowy Sobieszewo Mewia Łacha",
+    29: "Marina Przełom",
+    30: "Prom Świbno"
+}
+
+############################
 # Funkcja obliczająca odległość euklidesową w km (zaokrąglenie do 1 miejsca)
 ############################
 def euclidean_distance_km(p1, p2):
@@ -132,14 +168,7 @@ def create_map():
         mid_lon = (lon1 + lon2) / 2
         distance_icon = folium.DivIcon(
             html=f"""
-                <div style="
-                    font-size: 16px; 
-                    font-weight: bold; 
-                    color: black;
-                    padding: 2px 4px;
-                    border-radius: 0px;
-                    transform: rotate(0deg);
-                    ">
+                <div style="\n                    font-size: 16px; \n                    font-weight: bold; \n                    color: black;\n                    padding: 2px 4px;\n                    border-radius: 0px;\n                    transform: rotate(0deg);\n                    ">
                     {distance}
                 </div>
             """
@@ -149,23 +178,13 @@ def create_map():
     # Dodajemy markery węzłów
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
-            <b>Node {node}</b><br>
-            {image_html}
-        """
+            <b>{{}}</b><br>\n            {image_html}
+        """.format(node_names.get(node, f'Node {node}'))
         iframe = IFrame(html=popup_html, width=150, height=240)
         popup = Popup(iframe, max_width=150)
         marker_html = f"""
             <div style="text-align: center;">
-              <div style="
-                background-color: red;
-                color: white;
-                border-radius: 50%;
-                width: 24px;
-                height: 24px;
-                margin: auto;
-                font-size: 12pt;
-                font-weight: bold;
-                line-height: 24px;">
+              <div style="\n                background-color: red;\n                color: white;\n                border-radius: 50%;\n                width: 24px;\n                height: 24px;\n                margin: auto;\n                font-size: 12pt;\n                font-weight: bold;\n                line-height: 24px;">
                 {node}
               </div>
             </div>
@@ -173,7 +192,7 @@ def create_map():
         folium.Marker(
             location=[lat, lon],
             popup=popup,
-            tooltip=f"Node {node}",
+            tooltip=node_names.get(node, f'Node {node}'),
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
 
@@ -249,12 +268,12 @@ if map_data.get("last_clicked"):
             if snapped_node in allowed_nodes:
                 if snapped_node not in st.session_state.route:
                     st.session_state.route.append(snapped_node)
-                    st.success(f"Dodano węzeł {snapped_node} do trasy")
+                    st.success(f"Dodano węzeł {{snapped_node}} do trasy")
             else:
-                st.warning(f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}")
+                st.warning(f"Węzeł {{snapped_node}} nie jest powiązany z węzłem {{last_node}}")
         else:
             st.session_state.route.append(snapped_node)
-            st.success(f"Dodano węzeł {snapped_node} do trasy")
+            st.success(f"Dodano węzeł {{snapped_node}} do trasy")
 
 ############################
 # Obliczanie łącznej drogi użytkownika
