@@ -82,16 +82,16 @@ image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" heigh
 # ---------------------------
 # Inicjalizacja stanu sesji dla trasy, widoku mapy i start_time licznika
 # ---------------------------
-if "route" not in st.session_state:
-    st.session_state.route = []
-if "map_center" not in st.session_state:
-    avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
-    avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
-    st.session_state.map_center = [avg_lat, avg_lon]
-if "map_zoom" not in st.session_state:
-    st.session_state.map_zoom = 12
-if "start_time" not in st.session_state:
-    st.session_state.start_time = None
+# if "route" not in st.session_state:
+#     st.session_state.route = []
+# if "map_center" not in st.session_state:
+#     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
+#     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
+#     st.session_state.map_center = [avg_lat, avg_lon]
+# if "map_zoom" not in st.session_state:
+#     st.session_state.map_zoom = 12
+# if "start_time" not in st.session_state:
+#     st.session_state.start_time = None
 
 if st.button("Resetuj trasę"):
     st.session_state.route = []
