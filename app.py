@@ -13,7 +13,7 @@ from folium.plugins import PolyLineTextPath
 # Zadanie: Znajdź najkrótszą trasę z węzła 12 do węzła 28
 ############################
 
-st.title("Zadanie: Znajdź najkrótszą drogę od węzła 12 do węzła 28")
+st.write("Zadanie: Znajdź najkrótszą drogę od węzła 12 do węzła 28")
 st.write("Twoim celem jest skonstruowanie trasy łączącej węzły, tak aby przejść z 12 do 28.")
 
 # ---------------------------
@@ -203,7 +203,7 @@ def create_map():
 ############################
 # Wyświetlamy mapę – zwracamy tylko "last_clicked"
 ############################
-map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
+map_data = st_folium(create_map(), width=600, height=400, returned_objects=["last_clicked"])
 
 ############################
 # Aktualizacja widoku mapy – tylko przy kliknięciu (centrum=klik, zoom=15)
