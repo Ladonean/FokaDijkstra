@@ -3,10 +3,12 @@ from streamlit_folium import st_folium
 import folium
 import math
 import base64
+import time
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
 from folium.plugins import PolyLineTextPath
+import streamlit.components.v1 as components
 
 # ---------------------------
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
@@ -79,7 +81,7 @@ image_base64 = get_image_base64("node_image.png")
 image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" height="200" style="object-fit:contain;">'
 
 # ---------------------------
-# Inicjalizacja stanu sesji dla trasy oraz widoku mapy
+# Inicjalizacja stanu sesji dla trasy oraz widoku mapy oraz start_time licznika
 # ---------------------------
 if "route" not in st.session_state:
     st.session_state.route = []
@@ -89,9 +91,12 @@ if "map_center" not in st.session_state:
     st.session_state.map_center = [avg_lat, avg_lon]
 if "map_zoom" not in st.session_state:
     st.session_state.map_zoom = 12
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
 
 if st.button("Resetuj trasę"):
     st.session_state.route = []
+    st.session_state.start_time = None
 
 # ---------------------------
 # Funkcja tworząca mapę Folium z zachowaniem widoku
@@ -184,6 +189,29 @@ if map_data.get("last_clicked"):
             st.session_state.map_center = center_val
     if map_data.get("zoom"):
         st.session_state.map_zoom = map_data["zoom"]
+
+# Rozpoczęcie licznika, gdy trasa zostanie rozpoczęta (pierwszy węzeł dodany)
+if st.session_state.route and st.session_state.start_time is None:
+    st.session_state.start_time = time.time()
+
+# Wyświetlenie licznika czasu przy użyciu komponentu HTML (bez auto-refresh całej strony)
+if st.session_state.start_time is not None:
+    elapsed = time.time() - st.session_state.start_time
+    timer_html = f"""
+    <div id="timer" style="font-size:20px; font-weight:bold;">
+        Elapsed time: {elapsed:.1f} seconds
+    </div>
+    <script>
+    function updateTimer() {{
+        var start = {st.session_state.start_time} * 1000;
+        var now = new Date().getTime();
+        var elapsed = Math.floor((now - start) / 1000);
+        document.getElementById("timer").innerText = "Elapsed time: " + elapsed + " seconds";
+    }}
+    setInterval(updateTimer, 1000);
+    </script>
+    """
+    st.components.v1.html(timer_html, height=60)
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
