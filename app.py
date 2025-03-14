@@ -82,16 +82,16 @@ image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" heigh
 # ---------------------------
 # Inicjalizacja stanu sesji dla trasy, widoku mapy i start_time licznika
 # ---------------------------
-# if "route" not in st.session_state:
-#     st.session_state.route = []
-# if "map_center" not in st.session_state:
-#     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
-#     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
-#     st.session_state.map_center = [avg_lat, avg_lon]
-# if "map_zoom" not in st.session_state:
-#     st.session_state.map_zoom = 12
-# if "start_time" not in st.session_state:
-#     st.session_state.start_time = None
+if "route" not in st.session_state:
+    st.session_state.route = []
+if "map_center" not in st.session_state:
+    avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
+    avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
+    st.session_state.map_center = [avg_lat, avg_lon]
+if "map_zoom" not in st.session_state:
+    st.session_state.map_zoom = 12
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
 
 if st.button("Resetuj trasę"):
     st.session_state.route = []
@@ -179,24 +179,24 @@ def create_map():
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
 # Aktualizacja widoku mapy w st.session_state – tylko przy kliknięciu
-# if map_data.get("last_clicked"):
-#     if map_data.get("center"):
-#         center_val = map_data["center"]
-#         if isinstance(center_val, dict):
-#             st.session_state.map_center = [center_val["lat"], center_val["lng"]]
-#         else:
-#             st.session_state.map_center = center_val
-#     if map_data.get("zoom"):
-#         st.session_state.map_zoom = map_data["zoom"]
+if map_data.get("last_clicked"):
+    if map_data.get("center"):
+        center_val = map_data["center"]
+        if isinstance(center_val, dict):
+            st.session_state.map_center = [center_val["lat"], center_val["lng"]]
+        else:
+            st.session_state.map_center = center_val
+    if map_data.get("zoom"):
+        st.session_state.map_zoom = map_data["zoom"]
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
-# if st.session_state.route and st.session_state.start_time is None:
-#     st.session_state.start_time = time.time()
+if st.session_state.route and st.session_state.start_time is None:
+    st.session_state.start_time = time.time()
 
-# # Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu
-# if st.session_state.start_time is not None:
-#     elapsed = time.time() - st.session_state.start_time
-#     st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
+# Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu
+if st.session_state.start_time is not None:
+    elapsed = time.time() - st.session_state.start_time
+    st.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
