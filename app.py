@@ -196,7 +196,7 @@ if st.session_state.route and st.session_state.start_time is None:
 # Wyświetlamy upływający czas jako zmienną tylko przy ostatnim kliknięciu (bez auto-refreshu)
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
-    st.sidebar.write(f"Elapsed time: {elapsed:.1f} seconds")
+    st.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Obsługa kliknięcia – dodawanie węzła do trasy, gdy kliknięcie jest blisko punktu
 if map_data.get("last_clicked"):
