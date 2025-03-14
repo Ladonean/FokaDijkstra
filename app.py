@@ -84,7 +84,6 @@ image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" heigh
 if "route" not in st.session_state:
     st.session_state.route = []
 if "map_center" not in st.session_state:
-    # Domyślne centrum mapy: średnia współrzędnych
     avg_lat = sum(lat for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     avg_lon = sum(lon for lat, lon in latlon_nodes.values()) / len(latlon_nodes)
     st.session_state.map_center = [avg_lat, avg_lon]
@@ -114,23 +113,16 @@ def create_map():
         line.add_to(m)
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
-        distance_icon = folium.DivIcon(
-            html=f"""
-                <div style="
-                    font-size: 16px; 
-                    font-weight: bold; 
-                    color: black;
-                    padding: 2px 4px;
-                    border-radius: 0px;
-                    transform: rotate(0deg);
-                    ">
-                    {distance}
-                </div>
-            """
-        )
-        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
+        PolyLineTextPath(
+            line,
+            f"{distance}",
+            repeat=False,
+            center=True,
+            offset=7,
+            attributes={'fill': 'black', 'font-weight': 'bold', 'font-size': '16px'}
+        ).add_to(m)
 
-    # Dodajemy markery – z popupem zawierającym tekst i obrazek
+    # Dodajemy markery – z popupem, który zawiera tekst i obrazek.
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
@@ -161,7 +153,7 @@ def create_map():
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
 
-    # Rysujemy trasę, jeśli jest zdefiniowana
+    # Rysujemy trasę (żółta linia) jeśli istnieje
     if st.session_state.route:
         route_coords = [latlon_nodes[node] for node in st.session_state.route if node in latlon_nodes]
         folium.PolyLine(
@@ -172,12 +164,13 @@ def create_map():
 
     return m
 
-# Wyświetlamy mapę przy użyciu streamlit-folium i pobieramy dane o widoku
+# Wyświetlamy mapę przy użyciu streamlit-folium
 map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
 
-# Aktualizacja stanu widoku mapy (centrum i zoom)
+# Aktualizacja widoku mapy (centrum i zoom)
 if map_data.get("center"):
-    st.session_state.map_center = map_data["center"]
+    center = map_data["center"]
+    st.session_state.map_center = [center["lat"], center["lng"]]
 if map_data.get("zoom"):
     st.session_state.map_zoom = map_data["zoom"]
 
