@@ -80,7 +80,7 @@ image_base64 = get_image_base64("node_image.png")
 image_html = f'<img src="data:image/png;base64,{image_base64}" width="100" height="200" style="object-fit:contain;">'
 
 # ---------------------------
-# Inicjalizacja stanu sesji: trasy, widoku mapy i start_time licznika
+# Inicjalizacja stanu sesji: trasy, widoku mapy, start_time
 # ---------------------------
 if "route" not in st.session_state:
     st.session_state.route = []
@@ -98,12 +98,12 @@ if st.button("Resetuj trasę"):
     st.session_state.start_time = None
 
 # ---------------------------
-# Funkcja tworząca mapę Folium z zachowaniem widoku
+# Funkcja tworząca mapę Folium
 # ---------------------------
 def create_map():
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Dodajemy krawędzie (graf) oraz etykiety – odległość na środku linii, pozioma
+    # Dodajemy krawędzie i etykiety (odległość na środku linii)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
@@ -133,7 +133,7 @@ def create_map():
         )
         folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
-    # Dodajemy markery – z popupem, który zawiera tekst i obrazek
+    # Dodajemy markery z popupem (z obrazkiem)
     for node, (lat, lon) in latlon_nodes.items():
         popup_html = f"""
             <b>Node {node}</b><br>
@@ -164,7 +164,7 @@ def create_map():
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
 
-    # Rysujemy trasę (żółta linia), jeśli jest zdefiniowana
+    # Rysujemy trasę (żółta linia) jeśli zdefiniowano
     if st.session_state.route:
         route_coords = [latlon_nodes[node] for node in st.session_state.route if node in latlon_nodes]
         folium.PolyLine(
@@ -175,26 +175,22 @@ def create_map():
 
     return m
 
-# Wyświetlamy mapę przy użyciu streamlit-folium – zwracamy tylko "last_clicked"
+# Wyświetlamy mapę – zwracamy tylko "last_clicked"
+map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked"])
 
-map_data = st_folium(create_map(), width=1000, height=600, returned_objects=["last_clicked", "center", "zoom"])
-
-# Aktualizacja widoku mapy – tylko przy kliknięciu
+# Aktualizacja widoku mapy – tylko przy kliknięciu (aktualizujemy center i zoom)
 if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
-    # Aktualizujemy centrum mapy na położenie kliknięcia
     st.session_state.map_center = [clicked_lat, clicked_lng]
-    # Aktualizujemy poziom zoomu
     if map_data.get("zoom"):
         st.session_state.map_zoom = map_data["zoom"]
-
 
 # Rozpoczęcie licznika – ustawiamy start_time przy pierwszym dodaniu węzła
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
 
-# Wyświetlenie upływającego czasu jako zmienna (aktualizowana przy każdej interakcji)
+# Wyświetlenie upływającego czasu jako zmienna
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
     st.write(f"Elapsed time: {elapsed:.1f} seconds")
