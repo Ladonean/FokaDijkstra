@@ -229,7 +229,7 @@ def create_map():
         # 3) budujemy HTML do popupu
         popup_html = f"""
             <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
-            <b>{name}</b><br>
+            {name}<br>
         """
         iframe = IFrame(html=popup_html, width=215, height=235)
         popup = Popup(iframe, max_width=215)
