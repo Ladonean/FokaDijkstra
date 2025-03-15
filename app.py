@@ -259,7 +259,7 @@ with col_info:
         if candidate_node is not None:
             # Obrazek
             b64 = images_base64[candidate_node]
-            st.image(f"data:image/png;base64,{b64}", use_column_width=True)
+            st.image(f"data:image/png;base64,{b64}", use_container_width=True)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
             # Czy można dodać?
