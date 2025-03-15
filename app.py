@@ -316,4 +316,4 @@ st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""Możesz tutaj dodać objaśnienia teoretyczne dotyczące algorytmu wyznaczania najkrótszej ścieżki, 
 np. algorytmu Dijkstry, BFS, itp.""")
 
-st.write("Wybrana trasa użytkownika:", st.session_state.route)
+
