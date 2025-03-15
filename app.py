@@ -228,11 +228,11 @@ def create_map():
         
         # 3) budujemy HTML do popupu
         popup_html = f"""
-            <img src="data:image/png;base64,{img64}" width="140" height="160" style="object-fit:cover;"><br>
+            <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
             <b>{name}</b><br>
         """
-        iframe = IFrame(html=popup_html, width=170, height=200)
-        popup = Popup(iframe, max_width=170)
+        iframe = IFrame(html=popup_html, width=215, height=235)
+        popup = Popup(iframe, max_width=215)
 
         # Wyświetlany numer w kółku
         marker_html = f"""
