@@ -242,15 +242,9 @@ if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
     clicked_lng = map_data["last_clicked"]["lng"]
     st.session_state.map_center = [clicked_lat, clicked_lng]
-    st.session_state.map_zoom = 15
+    st.session_state.map_zoom = 13.5
 
-# Rozpoczęcie licznika
-if st.session_state.route and st.session_state.start_time is None:
-    st.session_state.start_time = time.time()
 
-if st.session_state.start_time is not None:
-    elapsed = time.time() - st.session_state.start_time
-    st.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 # Dodawanie węzła do trasy
 if map_data.get("last_clicked"):
@@ -279,6 +273,14 @@ if map_data.get("last_clicked"):
             st.session_state.route.append(snapped_node)
             st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")
 
+# Rozpoczęcie licznika
+if st.session_state.route and st.session_state.start_time is None:
+    st.session_state.start_time = time.time()
+
+if st.session_state.start_time is not None:
+    elapsed = time.time() - st.session_state.start_time
+    st.write(f"Elapsed time: {elapsed:.1f} seconds")
+    
 # Liczenie łącznej drogi
 def total_user_distance(route):
     dist = 0.0
