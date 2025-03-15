@@ -21,15 +21,28 @@ st.set_page_config(
 ############################
 # Sekcje: Start, Samouczek, Wyzwanie, Teoria
 ############################
+st.markdown("""
+    <style>
+    html { scroll-behavior: smooth; }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.sidebar.markdown("""
+**Nawigacja**
+- <a href="#Start">Start</a>  
+- <a href="#Samouczek">Samouczek</a>  
+- <a href="#Wyzwanie">Wyzwanie</a>  
+- <a href="#Teoria">Teoria</a>  
+""", unsafe_allow_html=True)
 
 st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
 # Sekcja 1: Start
-st.markdown("## Start")
+st.markdown('<h2 id="Start">Start</h2>', unsafe_allow_html=True)
 st.write("Witamy w aplikacji! Tutaj możesz zacząć swoją przygodę z wyszukiwaniem najkrótszej trasy od węzła 12 do 28.")
 
 # Sekcja 2: Samouczek
-st.markdown("## Samouczek")
+st.markdown('<h2 id="Samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij na mapie, by wybrać kolejne węzły trasy.
 2. Trasa jest rysowana na żółto.
@@ -38,7 +51,7 @@ st.write("""\
 5. Czas liczony jest od momentu pierwszego dodanego węzła.""")
 
 # Sekcja 3: Wyzwanie (Właściwa mapa i logika)
-st.markdown("## Wyzwanie")
+st.markdown('<h2 id="Wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
 punkty = {
@@ -288,7 +301,7 @@ if 28 in st.session_state.route:
         st.write("Brak ścieżki pomiędzy 12 a 28.")
 
 # Sekcja 4: Teoria
-st.markdown("## Teoria")
+st.markdown('<h2 id="Teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""Możesz tutaj dodać objaśnienia teoretyczne dotyczące algorytmu wyznaczania najkrótszej ścieżki, 
 np. algorytmu Dijkstry, BFS, itp.""")
 
