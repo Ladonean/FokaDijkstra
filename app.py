@@ -231,8 +231,8 @@ def create_map():
             <img src="data:image/png;base64,{img64}" width="140" height="160" style="object-fit:cover;"><br>
             <b>{name}</b><br>
         """
-        iframe = IFrame(html=popup_html, width=180, height=240)
-        popup = Popup(iframe, max_width=240)
+        iframe = IFrame(html=popup_html, width=170, height=200)
+        popup = Popup(iframe, max_width=170)
 
         # Wyświetlany numer w kółku
         marker_html = f"""
