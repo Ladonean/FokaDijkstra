@@ -15,7 +15,7 @@ import os
 ############################
 st.set_page_config(
     page_title="Mapa Zadanie: 12 → 28",
-    layout="wide",               
+    layout="wide",
     initial_sidebar_state="expanded"
 )
 
@@ -139,6 +139,8 @@ def euclidean_distance_km(p1, p2):
 ############################
 # Budowa grafu w NetworkX
 ############################
+import networkx as nx
+
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
@@ -157,6 +159,7 @@ for num, coord in punkty.items():
 ############################
 # Konwersja EPSG:2180 → EPSG:4326
 ############################
+from pyproj import Transformer
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
@@ -220,13 +223,10 @@ def create_map():
 
     # Rysujemy węzły (markery)
     for node, (lat, lon) in latlon_nodes.items():
-        # 1) nazwa węzła
         name = node_names.get(node, f"Node {node}")
-        
-        # 2) pobieramy zakodowany obrazek
         img64 = images_base64[node]
         
-        # 3) budujemy HTML do popupu
+        # Dodajemy link "?selectnode= X " w popupie
         popup_html = f"""
             <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
             {name}<br>
@@ -237,7 +237,6 @@ def create_map():
         iframe = IFrame(html=popup_html, width=215, height=235)
         popup = Popup(iframe, max_width=215)
 
-        # Wyświetlany numer w kółku
         marker_html = f"""
             <div style="text-align: center;">
               <div style="
@@ -293,7 +292,36 @@ if map_data.get("last_clicked"):
     st.session_state.map_zoom = 13.5
 
 ############################
-# Dodawanie węzła do trasy
+# Obsługa parametru selectnode
+############################
+params = st.experimental_get_query_params()
+if "selectnode" in params:
+    selected_str = params["selectnode"][0]  # np. "12"
+    try:
+        selected_node_popup = int(selected_str)
+    except ValueError:
+        selected_node_popup = None
+
+    if selected_node_popup is not None and selected_node_popup in G.nodes:
+        # Wykorzystujemy tę samą logikę, co przy snapped_node
+        if st.session_state.route:
+            last_node = st.session_state.route[-1]
+            allowed_nodes = list(G.neighbors(last_node))
+            if selected_node_popup in allowed_nodes:
+                if selected_node_popup not in st.session_state.route:
+                    st.session_state.route.append(selected_node_popup)
+                    st.success(f"[POPUP] Dodano węzeł {selected_node_popup} ({node_names[selected_node_popup]}) do trasy")
+            else:
+                st.warning(f"[POPUP] Węzeł {selected_node_popup} nie jest powiązany z węzłem {last_node}")
+        else:
+            st.session_state.route.append(selected_node_popup)
+            st.success(f"[POPUP] Dodano węzeł {selected_node_popup} ({node_names[selected_node_popup]}) do trasy")
+
+    # Usuwamy ten parametr z URL, żeby nie dodawać wielokrotnie
+    st.experimental_set_query_params()
+
+############################
+# Dodawanie węzła do trasy - stare snapowanie (400 m)
 ############################
 if map_data.get("last_clicked"):
     clicked_lat = map_data["last_clicked"]["lat"]
