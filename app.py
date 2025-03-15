@@ -309,6 +309,11 @@ if map_data.get("last_clicked"):
 if snapped_node is not None:
     st.session_state.candidate_node = snapped_node
 
+
+st.write("map_data =", map_data)
+
+if map_data.get("last_clicked"):
+    st.write("last_clicked =", map_data["last_clicked"])
 ############################
 # Pod mapą – jeśli jest węzeł "kandydat", pokazujemy przycisk
 ############################
