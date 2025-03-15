@@ -290,6 +290,12 @@ def total_user_distance(route):
         if G.has_edge(u, v):
             dist += G[u][v]["weight"]
     return dist
+    
+# Tworzymy listę z nazwami węzłów
+named_route = [node_names[n] for n in st.session_state.route]
+
+# Wyświetlamy w formie listy lub tekstu
+st.write(f"Wybrane punkty użytkownika (kolejność): {named_route}")
 
 user_dist = total_user_distance(st.session_state.route)
 st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
