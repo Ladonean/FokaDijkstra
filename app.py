@@ -144,11 +144,6 @@ if "start_time" not in st.session_state:
 if "show_shortest" not in st.session_state:
     st.session_state.show_shortest = False
 
-# Przycisk reset
-if st.button("Resetuj trasę"):
-    st.session_state.route = []
-    st.session_state.start_time = None
-    st.session_state.show_shortest = False
 
 def create_map():
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
@@ -280,6 +275,12 @@ if st.session_state.route and st.session_state.start_time is None:
 if st.session_state.start_time is not None:
     elapsed = time.time() - st.session_state.start_time
     st.write(f"Elapsed time: {elapsed:.1f} seconds")
+
+# Przycisk reset
+if st.button("Resetuj trasę"):
+    st.session_state.route = []
+    st.session_state.start_time = None
+    st.session_state.show_shortest = False
     
 # Liczenie łącznej drogi
 def total_user_distance(route):
