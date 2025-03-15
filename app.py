@@ -36,6 +36,7 @@ st.markdown("""
                 - [Infromacje](#informacje)
                 - [Samouczek](#samouczek)
             """)
+)
 
 st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
