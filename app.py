@@ -27,25 +27,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.sidebar(
-st.subheader("Menu:")
-st.markdown("""
-                - [Mapa](#mapa)
-                - [Opady](#opady)
-                - [Polska](#polska)
-                - [Infromacje](#informacje)
+with st.sidebar:
+    st.title("DijkstraFoka")
+    st.subheader("Menu:")
+    st.markdown(
+            """
+                - [Start](#start)
                 - [Samouczek](#samouczek)
+                - [Wyzwanie](#wyzwanie)
+                - [Teoria](#teoria)
             """)
-)
 
 st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
 # Sekcja 1: Start
-st.markdown('<h2 id="Start">Start</h2>', unsafe_allow_html=True)
+st.markdown('<h2 id="start">Start</h2>', unsafe_allow_html=True)
 st.write("Witamy w aplikacji! Tutaj możesz zacząć swoją przygodę z wyszukiwaniem najkrótszej trasy od węzła 12 do 28.")
 
 # Sekcja 2: Samouczek
-st.markdown('<h2 id="Samouczek">Samouczek</h2>', unsafe_allow_html=True)
+st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij na mapie, by wybrać kolejne węzły trasy.
 2. Trasa jest rysowana na żółto.
@@ -54,7 +54,7 @@ st.write("""\
 5. Czas liczony jest od momentu pierwszego dodanego węzła.""")
 
 # Sekcja 3: Wyzwanie (Właściwa mapa i logika)
-st.markdown('<h2 id="Wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
+st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 # Dane – lista punktów (w metrach, EPSG:2180) – 30 punktów
 punkty = {
@@ -304,7 +304,7 @@ if 28 in st.session_state.route:
         st.write("Brak ścieżki pomiędzy 12 a 28.")
 
 # Sekcja 4: Teoria
-st.markdown('<h2 id="Teoria">Teoria</h2>', unsafe_allow_html=True)
+st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""Możesz tutaj dodać objaśnienia teoretyczne dotyczące algorytmu wyznaczania najkrótszej ścieżki, 
 np. algorytmu Dijkstry, BFS, itp.""")
 
