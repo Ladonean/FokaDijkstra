@@ -47,7 +47,7 @@ st.write("Witamy w aplikacji! Tutaj możesz zacząć swoją przygodę z wyszukiw
 # Sekcja 2: Samouczek
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
-1. Kliknij na mapie, by wybrać kolejne węzły trasy.
+1. Kliknij blisko węzła na mapie, by wybrać kolejne węzły trasy, kliknij na węzeł żeby zobaczyć co się tam znajduje :)
 2. Trasa jest rysowana na żółto.
 3. Po dodaniu węzła 28 pojawi się zielona linia – najkrótsza możliwa ścieżka z 12 do 28.
 4. Odległość w km wyświetlana jest na środku każdej szarej krawędzi.
