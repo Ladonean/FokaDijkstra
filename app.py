@@ -375,6 +375,13 @@ if 28 in st.session_state.route:
 # Sekcja 4: Teoria
 ############################
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
-st.write("""Możesz tutaj dodać objaśnienia teoretyczne dotyczące algorytmu wyznaczania najkrótszej ścieżki, np. algorytmu Dijkstry, BFS, itp.""")
 
+st.write("""Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
+Możesz myśleć o nim jak o szukaniu najtańszej trasy na mapie: węzły to miasta, a wagi krawędzi to długości dróg.
+""")
+st.write(""" Zastosowania
+Nawigacja: Znajdowanie najszybszej trasy w systemach GPS.
+Sieci komputerowe: Protokół OSPF używa Dijkstry do trasowania pakietów.
+Transport i logistyka: Optymalizacja kosztów przewozu w firmach kurierskich.
+Gry i robotyka: Wytyczanie drogi postaciom w grach lub robotom w terenie.""")
 
