@@ -189,6 +189,16 @@ def create_map():
 
     # Markery + Circle
     for node,(la,lo) in latlon_nodes.items():
+
+        # Dodaj Circle "przezroczysty" (np. radius=100)
+        folium.Circle(
+            location=[la, lo],
+            radius=100,    # 100m
+            color=None,    # brak obramowania
+            fill=True,
+            fill_opacity=0  # całkowicie przezroczysty
+        ).add_to(m)
+        
         nm=node_names.get(node, f"Node{node}")
         b64=images_base64[node]
         pop_html=f"""
@@ -212,14 +222,6 @@ def create_map():
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
 
-        # Dodaj Circle "przezroczysty" (np. radius=100)
-        folium.Circle(
-            location=[la, lo],
-            radius=100,    # 100m
-            color=None,    # brak obramowania
-            fill=True,
-            fill_opacity=0  # całkowicie przezroczysty
-        ).add_to(m)
 
     # Trasa user (żółta)
     if st.session_state.route:
