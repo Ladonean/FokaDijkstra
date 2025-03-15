@@ -14,7 +14,7 @@ from folium.plugins import PolyLineTextPath
 ############################
 st.set_page_config(
     page_title="Mapa Zadanie: 12 → 28",
-    layout="centered",               # lub "wide"
+    layout="wide",               # lub "wide"
     initial_sidebar_state="expanded" # lub "collapsed"
 )
 
