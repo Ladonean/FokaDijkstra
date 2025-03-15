@@ -230,6 +230,9 @@ def create_map():
         popup_html = f"""
             <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
             {name}<br>
+            <a href="?selectnode={node}" style="color: blue; font-weight: bold;">
+                Wybierz punkt
+            </a>
         """
         iframe = IFrame(html=popup_html, width=215, height=235)
         popup = Popup(iframe, max_width=215)
