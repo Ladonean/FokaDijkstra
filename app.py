@@ -7,14 +7,15 @@ import time
 from pyproj import Transformer
 import networkx as nx
 from folium import IFrame, Popup, Element
+from folium.plugins import PolyLineTextPath
 import os
 
 ############################
-# Ustawienia strony
+# Ustawienia strony: tytuł, tryb szerokości, stan paska bocznego itp.
 ############################
 st.set_page_config(
     page_title="Mapa Zadanie: 12 → 28",
-    layout="wide",
+    layout="wide",               
     initial_sidebar_state="expanded"
 )
 
@@ -34,14 +35,12 @@ with st.sidebar:
     st.title("DijkstraFoka")
     st.subheader("Menu:")
     st.markdown(
-        """
-        - [Start](#start)
-        - [Samouczek](#samouczek)
-        - [Wyzwanie](#wyzwanie)
-        - [Teoria](#teoria)
-        """,
-        unsafe_allow_html=True
-    )
+            """
+                - [Start](#start)
+                - [Samouczek](#samouczek)
+                - [Wyzwanie](#wyzwanie)
+                - [Teoria](#teoria)
+            """, unsafe_allow_html=True)
 
 ############################
 # Sekcje: Start, Samouczek, Wyzwanie, Teoria
@@ -55,20 +54,20 @@ st.write("Witamy w aplikacji! Tutaj możesz zacząć swoją przygodę z wyszukiw
 # Sekcja 2: Samouczek
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
-1. Kliknij **dokładnie** w marker węzła (nie obok), aby zobaczyć jego popup.
-2. W panelu Streamlit pojawi się komunikat i przycisk „Wybierz punkt”.
-3. Po kliknięciu przycisku węzeł zostanie dodany do Twojej trasy (jeśli dozwolone jest połączenie z poprzednim).
-4. Trasa jest rysowana na żółto. Po dojściu do węzła 28 ujrzysz najkrótszą możliwą (zieloną) ścieżkę w grafie.
-5. Odległość w km wyświetlana jest na środku każdej szarej krawędzi.
-6. Czas liczony jest od momentu pierwszego dodanego węzła.
-""")
+1. Kliknij blisko węzła na mapie, by wybrać kolejne węzły trasy, kliknij na węzeł żeby zobaczyć co się tam znajduje :)
+2. Trasa jest rysowana na żółto.
+3. Po dodaniu węzła 28 pojawi się zielona linia – najkrótsza możliwa ścieżka z 12 do 28.
+4. Odległość w km wyświetlana jest na środku każdej szarej krawędzi.
+5. Czas liczony jest od momentu pierwszego dodanego węzła.""")
 
-# Sekcja 3: Wyzwanie
+# Sekcja 3: Wyzwanie (Właściwa mapa i logika)
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 ############################
-# Dane węzłów + nazwy
+# Dane węzłów + nazwy + obrazy
 ############################
+
+# (1) Węzły (EPSG:2180)
 punkty = {
     1: (475268, 723118), 2: (472798, 716990), 3: (478390, 727009),
     4: (476650, 725153), 5: (476622, 721571), 6: (477554, 720574),
@@ -82,6 +81,7 @@ punkty = {
     28: (496518, 721917), 29: (485721, 721588), 30: (495889, 718798)
 }
 
+# (2) Nazwy węzłów
 node_names = {
     1: "PG",
     2: "Parkrun Gdańsk Południe",
@@ -115,14 +115,29 @@ node_names = {
     30: "Prom Świbno"
 }
 
+# (3) Funkcja do wczytania i zakodowania obrazka w base64
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# (4) Mapujemy każdy węzeł => plik obrazka np. "img1.png", "img2.png" itd.
+images_base64 = {}
+for node_id in punkty.keys():
+    image_filename = f"img{node_id}.png"  # np. nazwa pliku dla węzła 1 to "img1.png"
+    if os.path.exists(image_filename):
+        images_base64[node_id] = get_image_base64(image_filename)
+    else:
+        # jeśli nie istnieje plik, można wstawić placeholder
+        images_base64[node_id] = get_image_base64("img_placeholder.png")  # lub pominąć
+
 ############################
-# Funkcja licząca odległość euklidesową (w km)
+# Funkcja licząca odległość euklidesową (km)
 ############################
 def euclidean_distance_km(p1, p2):
     return round(math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) / 1000, 1)
 
 ############################
-# Budowa grafu (nieskierowany) - 3 najbliższych
+# Budowa grafu w NetworkX
 ############################
 G = nx.Graph()
 for num, coord in punkty.items():
@@ -132,17 +147,16 @@ for num, coord in punkty.items():
     distances = []
     for other_num, other_coord in punkty.items():
         if other_num != num:
-            dval = euclidean_distance_km(coord, other_coord)
-            distances.append((other_num, dval))
+            d = euclidean_distance_km(coord, other_coord)
+            distances.append((other_num, d))
     distances.sort(key=lambda x: x[1])
     nearest = distances[:3]
-    for (other, distv) in nearest:
-        G.add_edge(num, other, weight=distv)
+    for other_num, dist_val in nearest:
+        G.add_edge(num, other_num, weight=dist_val)
 
 ############################
-# Konwersja EPSG:2180 -> EPSG:4326
+# Konwersja EPSG:2180 → EPSG:4326
 ############################
-from pyproj import Transformer
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for node, (x, y) in punkty.items():
@@ -166,131 +180,146 @@ if "show_shortest" not in st.session_state:
     st.session_state.show_shortest = False
 
 ############################
-# create_map
+# Definicja mapy
 ############################
 def create_map():
     m = folium.Map(location=st.session_state.map_center, zoom_start=st.session_state.map_zoom)
 
-    # Rysujemy krawędzie
+    # Rysujemy krawędzie + odległość na środku
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distance = data["weight"]
-
-        folium.PolyLine(
+        
+        # Linia
+        line = folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
             tooltip=f"{distance} km"
-        ).add_to(m)
+        )
+        line.add_to(m)
 
-        # Etykieta odległości na środku
+        # Środek
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
-        dist_icon = folium.DivIcon(
+        distance_icon = folium.DivIcon(
             html=f"""
-            <div style="
-                font-size: 14px;
-                font-weight: bold;
-                color: black;
-                padding: 2px 4px;">
-                {distance}
-            </div>"""
+                <div style="
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: black;
+                    padding: 2px 4px;
+                    border-radius: 0px;
+                ">
+                    {distance}
+                </div>
+            """
         )
-        folium.Marker(location=[mid_lat, mid_lon], icon=dist_icon).add_to(m)
+        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
 
-    # Markery węzłów
+    # Rysujemy węzły (markery)
     for node, (lat, lon) in latlon_nodes.items():
+        # 1) nazwa węzła
         name = node_names.get(node, f"Node {node}")
-        # popup tekstowy
-        popup_html = f"Węzeł: {node}<br>{name}"
-        # tooltip = name
+        
+        # 2) pobieramy zakodowany obrazek
+        img64 = images_base64[node]
+        
+        # 3) budujemy HTML do popupu
+        popup_html = f"""
+            <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
+            {name}<br>
+        """
+        iframe = IFrame(html=popup_html, width=215, height=235)
+        popup = Popup(iframe, max_width=215)
+
+        # Wyświetlany numer w kółku
         marker_html = f"""
-        <div style="text-align:center;">
-          <div style="
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            margin:auto;
-            font-size:12pt;
-            font-weight:bold;
-            line-height:24px;">
-            {node}
-          </div>
-        </div>
+            <div style="text-align: center;">
+              <div style="
+                background-color: red;
+                color: white;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                margin: auto;
+                font-size: 12pt;
+                font-weight: bold;
+                line-height: 24px;">
+                {node}
+              </div>
+            </div>
         """
 
         folium.Marker(
             location=[lat, lon],
-            popup=popup_html,
+            popup=popup,
             tooltip=name,
             icon=folium.DivIcon(html=marker_html)
         ).add_to(m)
-
-    # Żółta linia - trasa user
+    
+    # Trasa użytkownika (żółta)
     if st.session_state.route:
         coords_route = [latlon_nodes[n] for n in st.session_state.route]
-        folium.PolyLine(
-            locations=coords_route,
-            color="yellow",
-            weight=4
-        ).add_to(m)
+        folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(m)
 
-    # Zielona - najkrótsza 12->28
+    # Najkrótsza (12->28) (zielona)
     if st.session_state.show_shortest:
-        if nx.has_path(G, 12, 28):
-            sp_nodes = nx.shortest_path(G, 12, 28, weight='weight')
-            coords_sp = [latlon_nodes[n] for n in sp_nodes]
-            folium.PolyLine(
-                locations=coords_sp,
-                color="green",
-                weight=5,
-                tooltip="Najkrótsza ścieżka (12->28)"
-            ).add_to(m)
+        shortest_path_12_28 = nx.shortest_path(G, source=12, target=28, weight='weight')
+        coords_sp = [latlon_nodes[n] for n in shortest_path_12_28]
+        folium.PolyLine(
+            locations=coords_sp,
+            color="green",
+            weight=5,
+            tooltip="Najkrótsza ścieżka (12->28)"
+        ).add_to(m)
 
     return m
 
 ############################
-# Wyświetlamy mapę
+# Wyświetlenie mapy
 ############################
 map_data = st_folium(create_map(), width=800, height=500, returned_objects=["last_clicked"])
 
-############################
-# Rozpoznanie węzła - tylko przy kliknięciu EXACTLY w marker
-############################
-clicked_node = None
-if map_data and map_data["last_clicked"]:
-    clat = map_data["last_clicked"]["lat"]
-    clng = map_data["last_clicked"]["lng"]
-    # sprawdzamy, czy (clat, clng) pasuje do któregoś węzła (z drobną tolerancją)
-    eps = 1e-7
-    for n, (nlat, nlng) in latlon_nodes.items():
-        if abs(nlat - clat) < eps and abs(nlng - clng) < eps:
-            clicked_node = n
-            break
+# Kliknięcie -> center + zoom
+if map_data.get("last_clicked"):
+    clicked_lat = map_data["last_clicked"]["lat"]
+    clicked_lng = map_data["last_clicked"]["lng"]
+    st.session_state.map_center = [clicked_lat, clicked_lng]
+    st.session_state.map_zoom = 13.5
 
-if clicked_node is not None:
-    st.info(f"Kliknięto w węzeł {clicked_node} ({node_names[clicked_node]})")
-    # dopiero po wciśnięciu przycisku "Wybierz punkt" dodaj do trasy
-    if st.button("Wybierz punkt"):
-        # logika "dodaj węzeł do route"
+############################
+# Dodawanie węzła do trasy
+############################
+if map_data.get("last_clicked"):
+    clicked_lat = map_data["last_clicked"]["lat"]
+    clicked_lng = map_data["last_clicked"]["lng"]
+    threshold = 400
+    snapped_node = None
+    for node, (lat, lon) in latlon_nodes.items():
+        dx = (lat - clicked_lat) * 111000
+        dy = (lon - clicked_lng) * 111000
+        d = math.sqrt(dx**2 + dy**2)
+        if d < threshold:
+            snapped_node = node
+            break
+    if snapped_node is not None:
         if st.session_state.route:
             last_node = st.session_state.route[-1]
-            neighbors = list(G.neighbors(last_node))
-            if clicked_node in neighbors:
-                if clicked_node not in st.session_state.route:
-                    st.session_state.route.append(clicked_node)
-                    st.success(f"Dodano węzeł {clicked_node} ({node_names[clicked_node]}) do trasy")
+            allowed_nodes = list(G.neighbors(last_node))
+            if snapped_node in allowed_nodes:
+                if snapped_node not in st.session_state.route:
+                    st.session_state.route.append(snapped_node)
+                    st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")
             else:
-                st.warning(f"Węzeł {clicked_node} nie jest powiązany z węzłem {last_node}")
+                st.warning(f"Węzeł {snapped_node} nie jest powiązany z węzłem {last_node}")
         else:
-            st.session_state.route.append(clicked_node)
-            st.success(f"Dodano węzeł {clicked_node} ({node_names[clicked_node]}) do trasy")
+            st.session_state.route.append(snapped_node)
+            st.success(f"Dodano węzeł {snapped_node} ({node_names[snapped_node]}) do trasy")
 
 ############################
-# Rozpoczęcie licznika czasu
+# Rozpoczęcie licznika
 ############################
 if st.session_state.route and st.session_state.start_time is None:
     st.session_state.start_time = time.time()
@@ -300,7 +329,7 @@ if st.session_state.start_time is not None:
     st.write(f"Elapsed time: {elapsed:.1f} seconds")
 
 ############################
-# Przyciski
+# Przycisk reset
 ############################
 if st.button("Resetuj trasę"):
     st.session_state.route = []
@@ -311,40 +340,61 @@ if st.button("Resetuj trasę"):
 # Liczenie łącznej drogi
 ############################
 def total_user_distance(route):
-    dist_sum = 0.0
+    dist = 0.0
     for i in range(len(route)-1):
         u = route[i]
         v = route[i+1]
         if G.has_edge(u, v):
-            dist_sum += G[u][v]["weight"]
-    return dist_sum
+            dist += G[u][v]["weight"]
+    return dist
 
-dist_user = total_user_distance(st.session_state.route)
-st.write(f"Łączna droga użytkownika: {dist_user:.1f} km")
-
-# Wybrane punkty
-named_route = [f"{node}({node_names[node]})" for node in st.session_state.route]
-st.write(f"Wybrane węzły (kolejność): {named_route}")
+user_dist = total_user_distance(st.session_state.route)
+st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
 
 ############################
-# Gdy dojdziemy do 28, odkrywamy najkrótszą
+# Wybrana trasa (nazwy)
+############################
+named_route = [node_names[n] for n in st.session_state.route]
+st.write(f"Wybrane punkty użytkownika (kolejność): {named_route}")
+
+############################
+# Najkrótsza droga (12 -> 28) po dotarciu
 ############################
 if 28 in st.session_state.route:
     st.session_state.show_shortest = True
     if nx.has_path(G, 12, 28):
-        sp = nx.shortest_path(G, 12, 28, weight='weight')
-        cost_sp = nx.shortest_path_length(G, 12, 28, weight='weight')
-        st.write(f"Najkrótsza ścieżka (12->28): {sp}")
-        st.write(f"Długość: {cost_sp:.1f} km")
+        shortest_path_12_28 = nx.shortest_path(G, 12, 28, weight='weight')
+        st.write(f"Najkrótsza możliwa trasa (12 -> 28): {shortest_path_12_28}")
+        shortest_length_12_28 = nx.shortest_path_length(G, 12, 28, weight='weight')
+        st.write("\nGratulacje! Dotarłeś do węzła 28.")
+        st.write(f"Najkrótsza możliwa trasa (12 -> 28) ma długość: {shortest_length_12_28:.1f} km")
     else:
-        st.write("Brak ścieżki 12->28 w tym grafie.")
+        st.write("Brak ścieżki pomiędzy 12 a 28.")
 
 ############################
 # Sekcja 4: Teoria
 ############################
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
-st.write("Tutaj opisujemy algorytm Dijkstry itp.")
 
-# Przykład przycisku do wyświetlenia gifa
+st.write("""Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
+Możesz myśleć o nim jak o szukaniu najtańszej trasy na mapie: węzły to miasta, a wagi krawędzi to długości dróg.
+""")
+
+st.write("""
+**Zastosowania**  
+
+Nawigacja:  
+Znajdowanie najszybszej trasy w systemach GPS.  
+
+Sieci komputerowe:  
+Protokół OSPF używa Dijkstry do trasowania pakietów.  
+
+Transport i logistyka:  
+Optymalizacja kosztów przewozu w firmach kurierskich.  
+
+Gry i robotyka:  
+Wytyczanie drogi postaciom w grach lub robotom w terenie.
+""")
+
 if st.button("Pokaż animację algorytmu Dijkstry"):
     st.image("dijkstra_steps.gif", caption="Przykładowy przebieg algorytmu Dijkstry.")
