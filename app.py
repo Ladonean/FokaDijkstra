@@ -163,7 +163,7 @@ def create_map():
                     padding: 2px 4px;
                     border-radius: 0px;
                 ">
-                    {distance} km
+                    {distance}
                 </div>
             """
         )
