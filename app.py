@@ -376,14 +376,25 @@ if 28 in st.session_state.route:
 ############################
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 
-st.write("""Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.<br>
+st.write("""Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
 Możesz myśleć o nim jak o szukaniu najtańszej trasy na mapie: węzły to miasta, a wagi krawędzi to długości dróg.
 """)
-st.write(""" Zastosowania""")
-st.write(""" Nawigacja: Znajdowanie najszybszej trasy w systemach GPS.""")
-st.write(""" Sieci komputerowe: Protokół OSPF używa Dijkstry do trasowania pakietów.""")
-st.write(""" Transport i logistyka: Optymalizacja kosztów przewozu w firmach kurierskich.""")
-st.write(""" Gry i robotyka: Wytyczanie drogi postaciom w grach lub robotom w terenie.""")
+
+st.write("""
+**Zastosowania**  
+
+Nawigacja:  
+Znajdowanie najszybszej trasy w systemach GPS.  
+
+Sieci komputerowe:  
+Protokół OSPF używa Dijkstry do trasowania pakietów.  
+
+Transport i logistyka:  
+Optymalizacja kosztów przewozu w firmach kurierskich.  
+
+Gry i robotyka:  
+Wytyczanie drogi postaciom w grach lub robotom w terenie.
+""")
 
 if st.button("Pokaż animację algorytmu Dijkstry"):
     st.image("dijkstra_steps.gif", caption="Przykładowy przebieg algorytmu Dijkstry.")
