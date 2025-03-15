@@ -27,13 +27,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-**Nawigacja**
-- <a href="#Start">Start</a>  
-- <a href="#Samouczek">Samouczek</a>  
-- <a href="#Wyzwanie">Wyzwanie</a>  
-- <a href="#Teoria">Teoria</a>  
-""", unsafe_allow_html=True)
+st.sidebar(
+st.subheader("Menu:")
+st.markdown("""
+                - [Mapa](#mapa)
+                - [Opady](#opady)
+                - [Polska](#polska)
+                - [Infromacje](#informacje)
+                - [Samouczek](#samouczek)
+            """)
 
 st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
