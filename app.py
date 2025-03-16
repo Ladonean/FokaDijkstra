@@ -220,39 +220,46 @@ def assign_modifiers_once():
     if len(all_edges) < 6:
         st.warning("Nie ma wystarczającej liczby krawędzi do wylosowania 6! Pomijam modyfikatory.")
         return
+
     chosen_6 = random.sample(all_edges, 6)
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
-    
-    # Tworzymy ładną tabelkę do wyświetlenia od razu po losowaniu
+
+    # Przygotowujemy listę, z której potem zbudujemy tabelę
     table_modifiers = []
+
     for i, ed in enumerate(chosen_6):
         mult = shuffled[i]
         color = COLOR_MAP[mult]
         (a, b) = ed
         old_w = G[a][b]["weight"]
         new_w = round(old_w * mult, 2)
+        # Aktualizujemy graf
         G[a][b]["weight"] = new_w
         if G.has_edge(b, a):
             G[b][a]["weight"] = new_w
-        st.session_state["edge_mods"][ed] = (color, new_w)
-        
-        # Dodajemy dane do tabelki
-        table_modifiers.append({
-            "Trasa": f"{a} ↔ {b}",
-            "Nazwa punktów": f"{node_names[a]} ↔ {node_names[b]}",
-            "Bazowa odległość [km]": old_w,
-            "Mnożnik": mult,
-            "Zmodyfikowana odległość [km]": new_w,
-            "Kolor na mapie": color
-        })
-        
-    st.session_state["modifiers_assigned"] = True
 
-    # Wyświetlamy tabelkę od razu
-    st.subheader("Trasy z przypisanymi modyfikatorami")
-    st.write("Poniższa tabela pokazuje, które trasy mają modyfikatory oraz jakie są ich wartości bazowe i po przeliczeniu:")
-    st.table(table_modifiers)
+        # Zapis w session_state["edge_mods"]
+        st.session_state["edge_mods"][ed] = (color, new_w)
+
+        # Dodajemy wiersz do listy modyfikatorów (do tabeli)
+        table_modifiers.append({
+            "Krawędź": f"{a}-{b}",
+            "Nazwa punktów": f"{node_names[a]} ↔ {node_names[b]}",
+            "Bazowa odległość": old_w,
+            "Mnożnik": mult,
+            "Zmodyfikowana odległość": new_w,
+            "Kolor": color
+        })
+
+    st.session_state["modifiers_assigned"] = True
+    # Zapisujemy listę do session_state, żeby nie zniknęła po rerunie
+    st.session_state["mod_table"] = table_modifiers
+
+    # Debugowe wypisy
+    st.write("Modyfikatory przypisane (lista):", table_modifiers)
+    st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
+
 
 
 #########################
