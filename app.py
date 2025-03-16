@@ -122,7 +122,7 @@ node_names = {
     32: "Gdańsk Śródmieście"
 }
 
-# Wczytanie i zakodowanie obrazków (base64)
+# (1) Wczytanie obrazka jako base64
 def get_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -162,7 +162,7 @@ for u, v in special_edges:
     else:
         G.add_edge(u, v, weight=special_weight)
 
-# Konwersja EPSG:2180 -> EPSG:4326
+# (2) Transformacja EPSG:2180 -> EPSG:4326
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for n, (x, y) in punkty.items():
@@ -202,7 +202,7 @@ if "final_time" not in st.session_state:
     st.session_state["final_time"] = None
 
 ############################
-# Trasa przyspieszona – punkty kontrolne (niebieska, przerywana)
+# Trasa kontrolna – "standardowe" niebieskie odcinki
 ############################
 control_points = [
     (476836.13, 720474.95), (476867.00, 720974.20), (476939.43, 721489.61),
@@ -213,63 +213,95 @@ control_points = [
     (472284.89, 726986.93), (472229.03, 727344.24)
 ]
 
-# Konwersja na lat, lon dla kontrolnych punktów
-control_points_latlon = []
-for pt in control_points:
-    lon, lat = transformer.transform(pt[0], pt[1])
-    control_points_latlon.append((lat, lon))
+def distance_latlon(a, b):
+    """Zwraca dystans (km) między (lat, lon)"""
+    return round(math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2) / 1000, 2)
 
-def distance_between_latlon(a, b):
-    """Zwraca dystans w km między dwoma (lat, lon)."""
-    return round(
-        math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2) / 1000,
-        2
-    )
+def transform2180_to4326(x, y):
+    """Pomocnicza funkcja do konwersji punktów EPSG:2180 -> 4326."""
+    lon, lat = transformer.transform(x, y)
+    return (lat, lon)
 
-def compute_control_distance_total(points):
-    """Suma wszystkich segmentów (z 50% bonusem)."""
-    total = 0.0
-    for i in range(len(points) - 1):
-        d = distance_between_latlon(points[i], points[i+1])
-        total += d
-    # Może być np. ×0.5
-    return round(total * 0.5, 2)
+control_points_latlon = [transform2180_to4326(p[0], p[1]) for p in control_points]
 
-control_distance = compute_control_distance_total(control_points_latlon)
-control_distance_text = f"{control_distance:.1f} km"
-
-###########################################################################
-# FUNKCJA: Rysuj trasę kontrolną (z podziałem na segmenty) + odległości
-###########################################################################
-def draw_control_route(map_obj, latlon_list):
+############################
+# Rysowanie standardowej trasy kontrolnej
+############################
+def draw_control_route(map_obj):
     """
-    Rysuje trasę kontrolną jako kolejne segmenty (niebieskie, przerywane).
-    Każdy segment ma swoją etykietę odległości na środku.
+    Rysuje serię niebieskich, przerywanych segmentów + etykiety
+    dla `control_points_latlon`.
     """
-    for i in range(len(latlon_list) - 1):
-        lat1, lon1 = latlon_list[i]
-        lat2, lon2 = latlon_list[i+1]
-        segment_dist = distance_between_latlon((lat1, lon1), (lat2, lon2))
-        # Rysujemy "realny" dystans w etykiecie
+    for i in range(len(control_points_latlon) - 1):
+        lat1, lon1 = control_points_latlon[i]
+        lat2, lon2 = control_points_latlon[i+1]
+        dval = distance_latlon((lat1, lon1), (lat2, lon2))
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color="blue",
             weight=4,
             dash_array="5, 10",
-            tooltip=f"{segment_dist} km (odcinek)"
+            tooltip=f"{dval} km"
         ).add_to(map_obj)
-
-        # Środek segmentu
+        # Połowa odcinka
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
-        dist_icon = DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;">
-                {segment_dist}
-            </div>
-            """
-        )
-        folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(map_obj)
+        folium.Marker(
+            [mid_lat, mid_lon],
+            icon=DivIcon(
+                html=f"""
+                <div style="font-size:14px;font-weight:bold;color:blue;">
+                    {dval}
+                </div>
+                """
+            )
+        ).add_to(map_obj)
+
+
+############################
+# DODATKOWA: rysowanie "specjalnej" niebieskiej trasy 31→7→32
+#            z uwzględnieniem 0.5 * (31->7 + 7->32)
+############################
+def draw_special_blue_path_31_7_32(map_obj):
+    """
+    Rysuje linię z węzła 31 do 7 i dalej do 32, w kolorze niebieskim (przerywany).
+    Wyświetla JEDNĄ etykietę z sumarycznym dystansem (pomnożonym przez 0.5)
+    w okolicy węzła 7, traktowanego jako "środek".
+    """
+
+    # (1) Realny dystans "szary" (bez 0.5) dla 31->7 i 7->32
+    d_31_7 = euclidean_distance_km(punkty[31], punkty[7])  # w km
+    d_7_32 = euclidean_distance_km(punkty[7], punkty[32])
+    real_distance = d_31_7 + d_7_32
+
+    # (2) Zgodnie z Twoim opisem: "0.5 tej naszej trasy"
+    half_distance = real_distance * 0.5
+
+    # (3) Pobieramy współrzędne lat,lon
+    lat31, lon31 = latlon_nodes[31]
+    lat7,  lon7  = latlon_nodes[7]
+    lat32, lon32 = latlon_nodes[32]
+
+    # Rysujemy dwusegmentowy PolyLine (31->7->32)
+    folium.PolyLine(
+        locations=[[lat31, lon31], [lat7, lon7], [lat32, lon32]],
+        color="blue",
+        weight=4,
+        dash_array="5, 10",
+        tooltip=f"31→7→32"
+    ).add_to(map_obj)
+
+    # Dodajemy jedną etykietę w okolicy węzła 7
+    # z wartością 0.5 * (31->7 + 7->32)
+    dist_icon = DivIcon(
+        html=f"""
+        <div style="font-size:14px;font-weight:bold;color:blue;">
+            {half_distance:.1f} km
+        </div>
+        """
+    )
+    folium.Marker([lat7, lon7], icon=dist_icon).add_to(map_obj)
+
 
 ###########################################################################
 # FINALNY WIDOK – jeśli game_over = True
@@ -287,7 +319,6 @@ if st.session_state["game_over"]:
     shortest_distance = 0.0
     if nx.has_path(G, 12, 28):
         shortest_nodes = nx.shortest_path(G, 12, 28, weight="weight")
-        # wyliczamy dystans najkrótszej
         for i in range(len(shortest_nodes) - 1):
             u = shortest_nodes[i]
             v = shortest_nodes[i+1]
@@ -314,31 +345,22 @@ if st.session_state["game_over"]:
 
     # Finalna mapa (z odległościami)
     st.markdown("#### Finalna mapa:")
+    final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    final_map = folium.Map(
-        location=st.session_state["map_center"],
-        zoom_start=st.session_state["map_zoom"]
-    )
-
-    # Rysujemy krawędzie (szare) i etykiety z odległościami,
-    # ALE pomijamy special_edges, żeby ich nie pokazywać
+    # Rysujemy krawędzie szare, pomijając special_edges
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
-            # pomijamy rysowanie
             continue
-
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distv = data["weight"]
-        poly_line = folium.PolyLine(
+        folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
             tooltip=f"{distv} km"
-        )
-        poly_line.add_to(final_map)
+        ).add_to(final_map)
 
-        # Dodajemy znacznik z wartością odległości w połowie krawędzi
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
         dist_icon = DivIcon(
@@ -350,7 +372,7 @@ if st.session_state["game_over"]:
         )
         folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(final_map)
 
-    # Markery z ID w tooltipie (czerwone kółka)
+    # Markery z ID w tooltipie
     for node_id, (latn, lonn) in latlon_nodes.items():
         folium.Marker(
             location=[latn, lonn],
@@ -383,19 +405,20 @@ if st.session_state["game_over"]:
             tooltip="Najkrótsza (12→28)"
         ).add_to(final_map)
 
-    # Rysujemy trasę kontrolną (niebieską, przerywaną) z etykietami
-    draw_control_route(final_map, control_points_latlon)
+    # Rysujemy niebieską trasę "kontrolną"
+    draw_control_route(final_map)
+    # Rysujemy specjalną trasę 31->7->32 (też niebieską, z jedną etykietą 0.5)
+    draw_special_blue_path_31_7_32(final_map)
 
     st_folium(final_map, width=800, height=600)
 
-    # Guzik resetu
     if st.button("Resetuj trasę"):
         st.session_state["route"] = []
         st.session_state["start_time"] = None
         st.session_state["show_shortest"] = False
         st.session_state["game_over"] = False
         st.session_state["final_time"] = None
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     ###########################################################################
@@ -405,12 +428,10 @@ else:
     with col_map:
         folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-        # Rysowanie krawędzi (i odległości),
-        # pomijamy special_edges, żeby nie były widoczne
+        # Rysujemy krawędzie szare (pomijamy special_edges)
         for u, v, data in G.edges(data=True):
             if (u, v) in special_edges or (v, u) in special_edges:
                 continue
-
             lat1, lon1 = latlon_nodes[u]
             lat2, lon2 = latlon_nodes[v]
             distv = data["weight"]
@@ -421,7 +442,6 @@ else:
                 tooltip=f"{distv} km"
             ).add_to(folium_map)
 
-            # Znacznik z odległością na środku
             mid_lat = (lat1 + lat2) / 2
             mid_lon = (lon1 + lon2) / 2
             dist_icon = DivIcon(
@@ -433,7 +453,7 @@ else:
             )
             folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
 
-        # Markery z ID w tooltipie
+        # Markery z ID
         for node_id, (latn, lonn) in latlon_nodes.items():
             folium.Marker(
                 location=[latn, lonn],
@@ -456,10 +476,12 @@ else:
             coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
             folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
 
-        # Rysujemy trasę kontrolną (niebieską, przerywaną)
-        draw_control_route(folium_map, control_points_latlon)
+        # Rysujemy standardową trasę kontrolną (niebieskie segmenty)
+        draw_control_route(folium_map)
+        # Rysujemy specjalną trasę 31->7->32 (niebieska, z jedną etykietą 0.5)
+        draw_special_blue_path_31_7_32(folium_map)
 
-        # Opcjonalnie pokazuj najkrótszą (zieloną) – jeśli st.session_state["show_shortest"] = True
+        # Opcjonalnie najkrótsza zielona (jeśli user włączył)
         if st.session_state["show_shortest"]:
             sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
             coords_sp = [latlon_nodes[x] for x in sp_nodes]
@@ -482,10 +504,8 @@ else:
 
         clicked_id = None
         if map_data and map_data.get("last_object_clicked_tooltip"):
-            # Tooltip to tekst, np. "12"
-            clicked_id_str = map_data["last_object_clicked_tooltip"]
             try:
-                clicked_id = int(clicked_id_str)
+                clicked_id = int(map_data["last_object_clicked_tooltip"])
             except ValueError:
                 clicked_id = None
 
@@ -493,10 +513,9 @@ else:
             st.write("Rozpocznij od kliknięcia na punkt **12**.")
 
         if clicked_id is not None:
-            # Mamy ID węzła
             candidate_node = clicked_id
             if candidate_node in node_names:
-                # Wyświetlamy obrazek
+                # Obrazek
                 b64 = images_base64[candidate_node]
                 img_data = base64.b64decode(b64)
                 img = Image.open(io.BytesIO(img_data))
@@ -506,9 +525,7 @@ else:
 
                 st.write(f"**{node_names[candidate_node]}** (ID: {candidate_node})")
 
-                # Sprawdzamy, czy punkt można dodać
                 if not st.session_state["route"]:
-                    # Start tylko węzłem 12
                     allowed = (candidate_node == 12)
                     if not allowed:
                         st.info("Musisz zacząć od węzła 12.")
@@ -521,17 +538,15 @@ else:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({node_names[candidate_node]}) do trasy!")
 
-                        # Przeskakujemy map_center na nowy węzeł
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
                         st.session_state["map_zoom"] = 13
 
                         if st.session_state["start_time"] is None:
                             st.session_state["start_time"] = time.time()
 
-                        # Jeśli to 28, kończymy grę
                         if candidate_node == 28:
                             st.session_state["game_over"] = True
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
             else:
@@ -545,7 +560,7 @@ else:
             dist_val = total_user_distance(st.session_state["route"])
             st.write(f"Łączna droga: {dist_val:.1f} km")
 
-        # Czas od rozpoczęcia
+        # Czas
         if st.session_state["start_time"] is not None and not st.session_state["game_over"]:
             elapsed = time.time() - st.session_state["start_time"]
             st.write(f"Czas od rozpoczęcia: {elapsed:.1f} s")
@@ -556,7 +571,7 @@ else:
         st.session_state["show_shortest"] = False
         st.session_state["game_over"] = False
         st.session_state["final_time"] = None
-        st.experimental_rerun()
+        st.rerun()
 
 ############################################
 # Sekcja 4: Teoria (zawsze wyświetlana)
