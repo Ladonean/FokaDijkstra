@@ -153,7 +153,7 @@ for num, coord in punkty.items():
         G.add_edge(num, onum, weight=distv)
 
 # Dodajemy dodatkowe (specjalne) krawędzie między 31 a 7 oraz 7 a 32
-# Te krawędzie są "przyspieszone": waga = EuclideanDistance * 0.5
+# W tych krawędziach waga = EuclideanDistance * 0.5
 special_edges = [(31, 7), (7, 32)]
 for u, v in special_edges:
     special_weight = euclidean_distance_km(punkty[u], punkty[v]) * 0.5
@@ -170,10 +170,12 @@ for n, (x, y) in punkty.items():
     latlon_nodes[n] = (lat, lon)
 
 ############################
-# Stan sesji
+# Inicjalizacja stanu sesji
 ############################
-if "route" not in st.session_state:
-    st.session_state["route"] = []
+# Upewniamy się, że trasa zawsze zaczyna się od punktu 12
+if "route" not in st.session_state or not st.session_state["route"]:
+    st.session_state["route"] = [12]
+
 if "map_center" not in st.session_state:
     center_lat = sum(v[0] for v in latlon_nodes.values()) / len(latlon_nodes)
     center_lon = sum(v[1] for v in latlon_nodes.values()) / len(latlon_nodes)
@@ -186,7 +188,7 @@ if "show_shortest" not in st.session_state:
     st.session_state["show_shortest"] = False
 
 ############################
-# Dodatkowa trasa przyspieszona przez kontrolne punkty
+# Dodatkowa trasa przyspieszona przez punkty kontrolne
 ############################
 control_points = [
     (476836.13, 720474.95),
@@ -216,7 +218,7 @@ def compute_control_distance(points):
     for i in range(len(points)-1):
         dx = points[i+1][0] - points[i][0]
         dy = points[i+1][1] - points[i][1]
-        d = math.sqrt(dx**2 + dy**2) / 1000  # w km
+        d = math.sqrt(dx**2 + dy**2) / 1000
         total += d
     return total * 0.5
 control_distance = compute_control_distance(control_points)
@@ -229,10 +231,11 @@ col_map, col_info = st.columns([2, 1])
 
 with col_map:
     folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
-    # Krawędzie (szare) oraz etykiety
+    
+    # Rysowanie krawędzi (pomijamy specjalne)
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
-            continue  # specjalne krawędzie nie rysujemy
+            continue
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distv = data["weight"]
@@ -254,7 +257,7 @@ with col_map:
         )
         folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
     
-    # Markery węzłów (bez popupów, używamy tooltipów)
+    # Rysowanie markerów – używamy tooltipów, nie popupów
     for node in latlon_nodes:
         latn, lonn = latlon_nodes[node]
         nm = node_names[node]
@@ -272,12 +275,12 @@ with col_map:
             """)
         ).add_to(folium_map)
     
-    # Trasa użytkownika (żółta)
+    # Rysowanie trasy użytkownika (żółta)
     if st.session_state["route"]:
         coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
         folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
     
-    # Rysujemy specjalną trasę przez punkty kontrolne (niebieska, przerywana)
+    # Rysowanie przyspieszonej trasy (niebieska, przerywana) przez punkty kontrolne
     folium.PolyLine(
         locations=control_points_latlon,
         color="blue",
@@ -286,7 +289,7 @@ with col_map:
         tooltip=f"Przyspieszona trasa: {control_distance_text}"
     ).add_to(folium_map)
     
-    # Najkrótsza trasa (zielona) – jeśli show_shortest
+    # Rysowanie najkrótszej trasy (zielona) – jeśli show_shortest
     if st.session_state["show_shortest"]:
         sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
         coords_sp = [latlon_nodes[x] for x in sp_nodes]
@@ -306,6 +309,24 @@ with col_map:
 
 with col_info:
     st.subheader("Szczegóły punktu:")
+    # Jeśli trasa już zawiera 28, wyświetlamy finalny podsumowanie i zatrzymujemy dalszą interakcję
+    if 28 in st.session_state["route"]:
+        final_time = time.time() - st.session_state["start_time"]
+        def total_user_distance(route):
+            dsum = 0.0
+            for i in range(len(route)-1):
+                u = route[i]
+                v = route[i+1]
+                if G.has_edge(u, v):
+                    dsum += G[u][v]["weight"]
+            return dsum
+        final_distance = total_user_distance(st.session_state["route"])
+        st.markdown("### Finalna trasa")
+        st.write("Trasa:", st.session_state["route"])
+        st.write("Czas:", f"{final_time:.1f} s")
+        st.write("Łączna droga:", f"{final_distance:.1f} km")
+        st.stop()
+        
     clicked_name = None
     if map_data and map_data.get("last_object_clicked_tooltip"):
         clicked_name = map_data["last_object_clicked_tooltip"]
@@ -316,7 +337,7 @@ with col_info:
                 candidate_node = k
                 break
         if candidate_node is not None:
-            # Wyświetlamy obrazek – skalowany do maksymalnie 300x300 pikseli
+            # Wyświetlamy obrazek – domyślnie st.image(img) (bez use_container_width)
             b64 = images_base64[candidate_node]
             img_data = base64.b64decode(b64)
             img = Image.open(io.BytesIO(img_data))
@@ -324,7 +345,7 @@ with col_info:
             img.thumbnail(max_size)
             st.image(img)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
-            # Sprawdzamy, czy punkt można dodać (musi być sąsiadem ostatniego wybranego)
+            # Sprawdzamy, czy punkt można dodać do trasy (musi być sąsiadem ostatniego wybranego)
             last_node = st.session_state["route"][-1] if st.session_state["route"] else None
             allowed = True
             if last_node is not None:
@@ -335,7 +356,7 @@ with col_info:
                     if candidate_node not in st.session_state["route"]:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
-                        # Aktualizacja mapy: wycentruj i przybliż na wybranym punkcie
+                        # Aktualizujemy mapę: wycentruj i przybliż na wybranym punkcie
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
                         st.session_state["map_zoom"] = 13
                         st.rerun()
@@ -362,6 +383,8 @@ with col_info:
             if G.has_edge(u, v):
                 dsum += G[u][v]["weight"]
         return dsum
+    user_dist = total_user_distance(st.session_state["route"])
+    st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
 
 ############################
 # Pomiar czasu
@@ -376,7 +399,7 @@ if st.session_state["start_time"] is not None:
 # Przycisk reset
 ############################
 if st.button("Resetuj trasę"):
-    st.session_state["route"] = []
+    st.session_state["route"] = [12]  # start zawsze od punktu 12
     st.session_state["start_time"] = None
     st.session_state["show_shortest"] = False
     st.rerun()
