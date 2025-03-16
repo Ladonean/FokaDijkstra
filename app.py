@@ -315,8 +315,8 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm1, lonm1],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
-                {dist_31_7/1000:.1f} km
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+                {dist_31_7/1000:.1f}
             </div>
             """
         )
@@ -327,8 +327,8 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm2, lonm2],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
-                {dist_7_32/1000:.1f} km
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+                {dist_7_32/1000:.1f}
             </div>
             """
         )
@@ -371,7 +371,7 @@ if st.session_state["game_over"]:
     st.markdown("#### Finalna mapa:")
     final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    # Rysujemy krawędzie z modyfikatorami (ich nowe wagi i kolory)
+    # Rysujemy krawędzie z modyfikatorami (wyświetlamy zmodyfikowaną wagę oraz kolor, bez "km")
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
             continue
@@ -382,7 +382,7 @@ if st.session_state["game_over"]:
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
             weight=2,
-            tooltip=f"{distv} km"
+            tooltip=f"{distv}"
         ).add_to(final_map)
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
@@ -391,7 +391,7 @@ if st.session_state["game_over"]:
             icon=DivIcon(
                 html=f"""
                 <div style="font-size:14px;font-weight:bold;color:{color};">
-                    {distv} km
+                    {distv}
                 </div>
                 """
             )
@@ -432,7 +432,7 @@ if st.session_state["game_over"]:
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
 
-    # Rysujemy niebieską trasę 31->7->32 (ta nie jest modyfikowana – wyświetlamy oryginalne odległości)
+    # Rysujemy niebieską trasę 31->7->32 (bez białego tła i bez "km")
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
@@ -465,7 +465,7 @@ else:
                 [[lat1, lon1], [lat2, lon2]],
                 color=color,
                 weight=3,
-                tooltip=f"{distv} km"
+                tooltip=f"{distv}"
             ).add_to(main_map)
             mlat = (lat1 + lat2) / 2
             mlon = (lon1 + lon2) / 2
@@ -474,12 +474,11 @@ else:
                 icon=DivIcon(
                     html=f"""
                     <div style="font-size:14px;font-weight:bold;color:{color};">
-                        {distv} km
+                        {distv}
                     </div>
                     """
                 )
             ).add_to(main_map)
-
         for nd, (latn, lon_) in latlon_nodes.items():
             folium.Marker(
                 location=[latn, lon_],
@@ -496,22 +495,18 @@ else:
                     """
                 )
             ).add_to(main_map)
-
         if st.session_state["route"]:
             coords_user = [latlon_nodes[x] for x in st.session_state["route"]]
             folium.PolyLine(coords_user, color="yellow", weight=4, tooltip="Twoja trasa").add_to(main_map)
-
         node7_xy = punkty[7]
         node31_xy = punkty[31]
         node32_xy = punkty[32]
         draw_single_line_31_7_32(main_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
-
         if st.session_state["show_shortest"]:
             if nx.has_path(G, 12, 28):
                 spn = nx.shortest_path(G, 12, 28, weight="weight")
                 coordsSP = [latlon_nodes[x] for x in spn]
                 folium.PolyLine(coordsSP, color="green", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
-
         map_data = st_folium(main_map, width=800, height=600, returned_objects=["last_object_clicked_tooltip"])
     with col_info:
         st.subheader("Szczegóły punktu:")
@@ -521,10 +516,8 @@ else:
                 clicked_id = int(map_data["last_object_clicked_tooltip"])
             except ValueError:
                 clicked_id = None
-
         if not st.session_state["route"]:
             st.write("Rozpocznij od kliknięcia na punkt **12**.")
-
         if clicked_id is not None:
             if clicked_id in node_names:
                 b64 = images_base64[clicked_id]
