@@ -234,6 +234,8 @@ def assign_modifiers_once():
             G[b][a]["weight"] = neww
         st.session_state["edge_mods"][ed] = (color, mult)
     st.session_state["modifiers_assigned"] = True
+    # Debug – pokaż przypisane modyfikatory
+    st.write("Przypisane modyfikatory:", st.session_state["edge_mods"])
 
 #########################
 # Rysowanie krawędzi z modyfikatorami
@@ -249,6 +251,7 @@ def get_edge_color_and_weight(u, v):
 ###########################################
 # Niebieska trasa 31->...->7->...->32
 ###########################################
+# Ta trasa wyświetlana jest bez modyfikatorów (oryginalne odległości)
 control_points_31_7_32 = [
     (472229.00, 727345.00),   # przybliżenie 31
     (472284.89, 726986.93),
@@ -289,7 +292,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
-# Dla niebieskiej trasy wyświetlamy oryginalne (niezmodyfikowane) odległości – specjalnie dla 31->7 oraz 7->32
+# Ta funkcja rysuje niebieską trasę, ale wyświetla oryginalne odległości (bez modyfikatorów)
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -298,7 +301,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         weight=4,
         dash_array="5,10"
     ).add_to(fmap)
-    # Dla krawędzi (31,7) oraz (7,32) wyświetlamy oryginalne wagi (bez modyfikatorów)
+    # Dla specjalnych krawędzi wyświetlamy oryginalne odległości
     orig_31_7 = euclidean_distance_km(punkty[31], punkty[7])
     orig_7_32 = euclidean_distance_km(punkty[7], punkty[32])
     idx_7 = find_node_index_approx(pts_2180, node7_xy, label="7", tolerance=20.0)
@@ -364,14 +367,15 @@ if st.session_state["game_over"]:
 
     st.markdown("#### Finalna mapa:")
     final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
-    # Rysujemy krawędzie – dla zmodyfikowanych wyświetlamy przeliczoną wartość (bez "km")
+    # Rysujemy krawędzie – dla zmodyfikowanych wyświetlamy przeliczoną wartość (mnożoną)
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
             continue
         color, distv = get_edge_color_and_weight(u, v)
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
-        tooltip_text = f"{distv}"  # wyświetlamy przeliczoną wartość
+        # Jeśli krawędź ma modyfikator, wyświetlamy zmodyfikowaną wartość (bez "km")
+        tooltip_text = f"{distv}" if tuple(sorted((u, v))) in st.session_state["edge_mods"] else f"{distv} km"
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
@@ -422,7 +426,7 @@ if st.session_state["game_over"]:
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
-    # Rysujemy niebieską trasę 31->7->32 (bez modyfikatorów)
+    # Rysujemy niebieską trasę 31->7->32 – tu wyświetlamy oryginalne odległości, bo nie modyfikujemy tych krawędzi
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
@@ -448,7 +452,7 @@ else:
             color, distv = get_edge_color_and_weight(u, v)
             lat1, lon1 = latlon_nodes[u]
             lat2, lon2 = latlon_nodes[v]
-            tooltip_text = f"{distv}"  # wyświetlamy przeliczoną wartość, jeśli zmodyfikowana
+            tooltip_text = f"{distv}" if tuple(sorted((u, v))) in st.session_state["edge_mods"] else f"{distv} km"
             folium.PolyLine(
                 [[lat1, lon1], [lat2, lon2]],
                 color=color,
