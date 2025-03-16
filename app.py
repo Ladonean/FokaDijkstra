@@ -55,14 +55,15 @@ st.write("""\
 2. Obok mapy (w prawej kolumnie) pojawi się panel z obrazkiem, nazwą i przyciskiem „Wybierz punkt”.  
 3. Na początku dozwolony jest tylko punkt **12**.  
 4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto.  
-5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona), oraz podsumowanie.
+5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie.
 """)
 
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 ############################
-# Dane węzłów (uproszczona wersja do debugowania)
+# Definicje punktów i nazw (uproszczona wersja)
 ############################
+# Używamy tylko kilku punktów, aby łatwiej debugować modyfikatory
 punkty = {
     12: (465439, 724391),
     7: (474358.48, 724280.19),
@@ -80,7 +81,7 @@ node_names = {
 }
 
 ############################
-# Funkcja pobierająca obrazek
+# Funkcja pobierająca obrazek (base64)
 ############################
 def get_image_base64(path):
     with open(path, "rb") as f:
@@ -95,7 +96,7 @@ for n in punkty.keys():
         images_base64[n] = get_image_base64("img_placeholder.png")
 
 ############################
-# Obliczanie odległości
+# Obliczanie odległości (km)
 ############################
 def euclidean_distance_km(p1, p2):
     return round(math.dist(p1, p2) / 1000, 2)
@@ -113,7 +114,7 @@ for num, coord in punkty.items():
             if not G.has_edge(num, other):
                 G.add_edge(num, other, weight=dval)
 
-# Krawędzie specjalne – nie modyfikujemy ich (31–7 oraz 7–32)
+# Krawędzie specjalne – (31,7) i (7,32) nie będą modyfikowane
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
@@ -124,7 +125,7 @@ for (u, v) in special_edges:
         G.add_edge(u, v, weight=half_w)
 
 ############################
-# Konwersja współrzędnych
+# Konwersja współrzędnych (EPSG:2180 -> EPSG:4326)
 ############################
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
@@ -166,10 +167,17 @@ if "edge_mods" not in st.session_state:
 # Mnożniki i kolory
 #########################
 EDGE_MULTIPLIERS = [0.4, 0.6, 0.8, 1.2, 1.4, 1.6]
-COLOR_MAP = {0.4: "pink", 0.6: "lightgreen", 0.8: "lightblue", 1.2: "orange", 1.4: "red", 1.6: "brown"}
+COLOR_MAP = {
+    0.4: "pink",
+    0.6: "lightgreen",
+    0.8: "lightblue",
+    1.2: "orange",
+    1.4: "red",
+    1.6: "brown"
+}
 
 #########################
-# Losowanie modyfikatorów – pomijamy krawędzie specjalne
+# Losowanie modyfikatorów (pomijamy krawędzie specjalne)
 #########################
 def assign_modifiers_once():
     all_edges = []
@@ -182,7 +190,7 @@ def assign_modifiers_once():
     if len(all_edges) < 1:
         st.warning("Brak wystarczającej liczby krawędzi do losowania modyfikatorów.")
         return
-    # Losujemy – można wybrać min(6, len(all_edges))
+    # Losujemy min(6, liczba krawędzi)
     chosen = random.sample(all_edges, min(6, len(all_edges)))
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
@@ -195,7 +203,6 @@ def assign_modifiers_once():
         G[a][b]["weight"] = new_w
         if G.has_edge(b, a):
             G[b][a]["weight"] = new_w
-        # Zapisujemy kolor, nową wagę oraz mnożnik
         st.session_state["edge_mods"][ed] = (color, new_w, mult)
         st.write(f"Krawędź {a}-{b}: {old_w} -> {new_w} (mnożnik: {mult})")
     st.session_state["modifiers_assigned"] = True
@@ -203,7 +210,7 @@ def assign_modifiers_once():
     st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
 
 #########################
-# Pobieranie koloru i wagi z grafu (zmodyfikowanej)
+# Pobieranie koloru i wagi (z grafu)
 #########################
 def get_edge_color_and_weight(u, v):
     ed = tuple(sorted((u, v)))
@@ -213,7 +220,7 @@ def get_edge_color_and_weight(u, v):
     return ("gray", G[u][v]["weight"])
 
 ###########################################
-# Niebieska trasa specjalna (31->...->7->...->32)
+# Specjalna niebieska trasa (31->...->7->...->32)
 ###########################################
 control_points_31_7_32 = [
     (472229.00, 727345.00),
@@ -255,7 +262,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
-# Ta funkcja rysuje specjalną niebieską trasę i wyświetla oryginalne (bazowe) odległości
+# Funkcja rysująca specjalną niebieską trasę – wyświetlamy oryginalne (bazowe) odległości
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -288,7 +295,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
 ###########################################
 # LOGIKA APLIKACJI
 ###########################################
-# (Przy rozpoczęciu trasy – pierwszy wybór musi być 12)
+# (Rozpoczynamy grę – pierwszy punkt musi być 12)
 if st.session_state["game_over"]:
     if st.session_state["final_time"] is None and st.session_state["start_time"] is not None:
         st.session_state["final_time"] = time.time() - st.session_state["start_time"]
@@ -377,7 +384,7 @@ if st.session_state["game_over"]:
     draw_single_line_31_7_32(final_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
     st_folium(final_map, width=800, height=600)
     
-    # Tabela modyfikatorów – pod mapą
+    # Tabela modyfikatorów pod mapą
     if st.session_state["modifiers_assigned"]:
         mod_list = []
         for ed, (color, mod_weight, multiplier) in st.session_state["edge_mods"].items():
@@ -393,7 +400,7 @@ if st.session_state["game_over"]:
         df_mod = pd.DataFrame(mod_list)
         st.subheader("Przypisane modyfikatory:")
         st.dataframe(df_mod)
-    
+
     if st.button("Resetuj trasę"):
         st.session_state["route"] = []
         st.session_state["start_time"] = None
