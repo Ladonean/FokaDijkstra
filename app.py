@@ -202,7 +202,7 @@ if "final_time" not in st.session_state:
     st.session_state["final_time"] = None
 
 ############################
-# Dodatkowa (kontrolna) trasa przyspieszona (niebieska, przerywana)
+# Trasa przyspieszona – punkty kontrolne (niebieska, przerywana)
 ############################
 control_points = [
     (476836.13, 720474.95), (476867.00, 720974.20), (476939.43, 721489.61),
@@ -212,23 +212,64 @@ control_points = [
     (473142.45, 725519.92), (472633.14, 726172.89), (472428.54, 726608.20),
     (472284.89, 726986.93), (472229.03, 727344.24)
 ]
+
+# Konwersja na lat, lon dla kontrolnych punktów
 control_points_latlon = []
 for pt in control_points:
     lon, lat = transformer.transform(pt[0], pt[1])
     control_points_latlon.append((lat, lon))
 
-def compute_control_distance(points):
+def distance_between_latlon(a, b):
+    """Zwraca dystans w km między dwoma (lat, lon)."""
+    return round(
+        math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2) / 1000,
+        2
+    )
+
+def compute_control_distance_total(points):
+    """Suma wszystkich segmentów (z 50% bonusem)."""
     total = 0.0
     for i in range(len(points) - 1):
-        dx = points[i + 1][0] - points[i][0]
-        dy = points[i + 1][1] - points[i][1]
-        d = math.sqrt(dx**2 + dy**2) / 1000
+        d = distance_between_latlon(points[i], points[i+1])
         total += d
-    return total * 0.5
+    # Może być np. ×0.5
+    return round(total * 0.5, 2)
 
-control_distance = compute_control_distance(control_points)
+control_distance = compute_control_distance_total(control_points_latlon)
 control_distance_text = f"{control_distance:.1f} km"
 
+###########################################################################
+# FUNKCJA: Rysuj trasę kontrolną (z podziałem na segmenty) + odległości
+###########################################################################
+def draw_control_route(map_obj, latlon_list):
+    """
+    Rysuje trasę kontrolną jako kolejne segmenty (niebieskie, przerywane).
+    Każdy segment ma swoją etykietę odległości na środku.
+    """
+    for i in range(len(latlon_list) - 1):
+        lat1, lon1 = latlon_list[i]
+        lat2, lon2 = latlon_list[i+1]
+        segment_dist = distance_between_latlon((lat1, lon1), (lat2, lon2))
+        # Rysujemy "realny" dystans w etykiecie
+        folium.PolyLine(
+            locations=[[lat1, lon1], [lat2, lon2]],
+            color="blue",
+            weight=4,
+            dash_array="5, 10",
+            tooltip=f"{segment_dist} km (odcinek)"
+        ).add_to(map_obj)
+
+        # Środek segmentu
+        mid_lat = (lat1 + lat2) / 2
+        mid_lon = (lon1 + lon2) / 2
+        dist_icon = DivIcon(
+            html=f"""
+            <div style="font-size:14px;font-weight:bold;color:blue;">
+                {segment_dist}
+            </div>
+            """
+        )
+        folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(map_obj)
 
 ###########################################################################
 # FINALNY WIDOK – jeśli game_over = True
@@ -279,11 +320,13 @@ if st.session_state["game_over"]:
         zoom_start=st.session_state["map_zoom"]
     )
 
-    # Rysujemy krawędzie (szare) i etykiety z odległościami
+    # Rysujemy krawędzie (szare) i etykiety z odległościami,
+    # ALE pomijamy special_edges, żeby ich nie pokazywać
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
-            # specjalne – można pominąć albo rysować inaczej
-            pass
+            # pomijamy rysowanie
+            continue
+
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distv = data["weight"]
@@ -340,6 +383,9 @@ if st.session_state["game_over"]:
             tooltip="Najkrótsza (12→28)"
         ).add_to(final_map)
 
+    # Rysujemy trasę kontrolną (niebieską, przerywaną) z etykietami
+    draw_control_route(final_map, control_points_latlon)
+
     st_folium(final_map, width=800, height=600)
 
     # Guzik resetu
@@ -349,7 +395,7 @@ if st.session_state["game_over"]:
         st.session_state["show_shortest"] = False
         st.session_state["game_over"] = False
         st.session_state["final_time"] = None
-        st.rerun()
+        st.experimental_rerun()
 
 else:
     ###########################################################################
@@ -359,10 +405,12 @@ else:
     with col_map:
         folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-        # Rysowanie krawędzi (i odległości) – pomijamy specjalne, jeśli chcesz
+        # Rysowanie krawędzi (i odległości),
+        # pomijamy special_edges, żeby nie były widoczne
         for u, v, data in G.edges(data=True):
             if (u, v) in special_edges or (v, u) in special_edges:
-                pass
+                continue
+
             lat1, lon1 = latlon_nodes[u]
             lat2, lon2 = latlon_nodes[v]
             distv = data["weight"]
@@ -408,14 +456,8 @@ else:
             coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
             folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
 
-        # Trasa kontrolna (niebieska, przerywana)
-        folium.PolyLine(
-            locations=control_points_latlon,
-            color="blue",
-            weight=4,
-            dash_array="5,10",
-            tooltip=f"Przyspieszona trasa: {control_distance_text}"
-        ).add_to(folium_map)
+        # Rysujemy trasę kontrolną (niebieską, przerywaną)
+        draw_control_route(folium_map, control_points_latlon)
 
         # Opcjonalnie pokazuj najkrótszą (zieloną) – jeśli st.session_state["show_shortest"] = True
         if st.session_state["show_shortest"]:
@@ -489,7 +531,7 @@ else:
                         # Jeśli to 28, kończymy grę
                         if candidate_node == 28:
                             st.session_state["game_over"] = True
-                        st.rerun()
+                        st.experimental_rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
             else:
@@ -514,7 +556,7 @@ else:
         st.session_state["show_shortest"] = False
         st.session_state["game_over"] = False
         st.session_state["final_time"] = None
-        st.rerun()
+        st.experimental_rerun()
 
 ############################################
 # Sekcja 4: Teoria (zawsze wyświetlana)
