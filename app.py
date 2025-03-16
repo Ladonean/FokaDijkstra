@@ -126,7 +126,6 @@ for n in punkty.keys():
         images_base64[n] = get_image_base64("img_placeholder.png")
 
 def euclidean_distance_km(p1, p2):
-    # Funkcja zwraca oryginalną (niezmodyfikowaną) odległość na podstawie współrzędnych
     return round(math.dist(p1, p2) / 1000, 1)
 
 ################################
@@ -228,29 +227,30 @@ def assign_modifiers_once():
         mult = shuffled[i]
         color = COLOR_MAP[mult]
         (a, b) = ed
-        oldw = G[a][b]["weight"]
-        neww = round(oldw * mult, 2)
-        G[a][b]["weight"] = neww
+        old_w = G[a][b]["weight"]
+        new_w = round(old_w * mult, 2)
+        G[a][b]["weight"] = new_w
         if G.has_edge(b, a):
-            G[b][a]["weight"] = neww
-        st.session_state["edge_mods"][ed] = (color, mult)
+            G[b][a]["weight"] = new_w
+        st.session_state["edge_mods"][ed] = (color, new_w)
+        st.write(f"Krawędź {a}-{b}: {old_w} -> {new_w} (mnożnik: {mult})")
     st.session_state["modifiers_assigned"] = True
     st.write("Przypisane modyfikatory:", st.session_state["edge_mods"])
+    st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
 
 #########################
-# Rysowanie krawędzi – wyświetlamy wagę pobraną z grafu G (która została zaktualizowana)
+# Rysowanie krawędzi – pobieramy wagę z grafu G
 #########################
 def get_edge_color_and_weight(u, v):
     ed = tuple(sorted((u, v)))
     if ed in st.session_state["edge_mods"]:
-        (clr, mul) = st.session_state["edge_mods"][ed]
+        (clr, new_weight) = st.session_state["edge_mods"][ed]
         return (clr, G[u][v]["weight"])
     return ("gray", G[u][v]["weight"])
 
 ###########################################
-# Niebieska trasa 31->...->7->...->32
+# Niebieska trasa 31->...->7->...->32 (specjalna, bez modyfikatora)
 ###########################################
-# Ta trasa pozostaje bez modyfikatora
 control_points_31_7_32 = [
     (472229.00, 727345.00),   # przybliżenie 31
     (472284.89, 726986.93),
@@ -291,7 +291,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
-# Funkcja rysująca niebieską trasę – wyświetlamy oryginalne odległości dla krawędzi specjalnych
+# Rysujemy trasę specjalną (niebieską) – wyświetlamy oryginalne odległości dla krawędzi specjalnych
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -309,11 +309,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         folium.Marker(
             [latm, lonm],
             icon=DivIcon(
-                html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
-                    {orig_31_7}
-                </div>
-                """
+                html=f"""<div style="font-size:14px;font-weight:bold;color:blue;">{orig_31_7}</div>"""
             )
         ).add_to(fmap)
         mid_idx_7_32 = (idx_7 + len(pts_2180) - 1) // 2
@@ -321,11 +317,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         folium.Marker(
             [latm, lonm],
             icon=DivIcon(
-                html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
-                    {orig_7_32}
-                </div>
-                """
+                html=f"""<div style="font-size:14px;font-weight:bold;color:blue;">{orig_7_32}</div>"""
             )
         ).add_to(fmap)
 
@@ -371,7 +363,7 @@ if st.session_state["game_over"]:
         color, disp_w = get_edge_color_and_weight(u, v)
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
-        tooltip_text = f"{disp_w}"  # wyświetlamy przeliczoną wartość
+        tooltip_text = f"{disp_w}"
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
@@ -383,11 +375,7 @@ if st.session_state["game_over"]:
         folium.Marker(
             [mid_lat, mid_lon],
             icon=DivIcon(
-                html=f"""
-                <div style="font-size:14px;font-weight:bold;color:{color};">
-                    {tooltip_text}
-                </div>
-                """
+                html=f"""<div style="font-size:14px;font-weight:bold;color:{color};">{tooltip_text}</div>"""
             )
         ).add_to(final_map)
     for nd, (latn, lonn) in latlon_nodes.items():
@@ -399,9 +387,7 @@ if st.session_state["game_over"]:
                 <div style="text-align:center;">
                     <div style="background-color:red;color:white;border-radius:50%;
                                 width:24px;height:24px;font-size:12pt;font-weight:bold;
-                                line-height:24px;margin:auto;">
-                        {nd}
-                    </div>
+                                line-height:24px;margin:auto;">{nd}</div>
                 </div>
                 """
             )
@@ -422,7 +408,7 @@ if st.session_state["game_over"]:
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
-    # Rysujemy niebieską trasę 31->7->32 – te krawędzie nie mają modyfikatora, więc wyświetlamy oryginalne wartości
+    # Rysujemy niebieską trasę specjalną (31->7->32) – tutaj wyświetlamy oryginalne odległości
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
@@ -460,11 +446,7 @@ else:
             folium.Marker(
                 [mlat, mlon],
                 icon=DivIcon(
-                    html=f"""
-                    <div style="font-size:14px;font-weight:bold;color:{color};">
-                        {tooltip_text}
-                    </div>
-                    """
+                    html=f"""<div style="font-size:14px;font-weight:bold;color:{color};">{tooltip_text}</div>"""
                 )
             ).add_to(main_map)
         for nd, (latn, lon_) in latlon_nodes.items():
@@ -476,9 +458,7 @@ else:
                     <div style="text-align:center;">
                         <div style="background-color:red;color:white;border-radius:50%;
                                     width:24px;height:24px;font-size:12pt;font-weight:bold;
-                                    line-height:24px;margin:auto;">
-                            {nd}
-                        </div>
+                                    line-height:24px;margin:auto;">{nd}</div>
                     </div>
                     """
                 )
@@ -511,7 +491,7 @@ else:
                 b64 = images_base64[clicked_id]
                 dataim = base64.b64decode(b64)
                 im = Image.open(io.BytesIO(dataim))
-                im.thumbnail((300, 300))
+                im.thumbnail((300,300))
                 st.image(im)
                 st.write(f"**{node_names[clicked_id]}** (ID: {clicked_id})")
                 if not st.session_state["route"]:
