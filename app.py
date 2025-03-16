@@ -279,7 +279,7 @@ def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
         [lat_mid2, lon_mid2],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
                 {dist_7_32/1000:.1f} km (7->32)
             </div>
             """
