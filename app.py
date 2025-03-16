@@ -6,7 +6,7 @@ import base64
 import time
 from pyproj import Transformer
 import networkx as nx
-from folium import DivIcon, IFrame, Popup
+from folium import DivIcon
 import os
 from PIL import Image
 import io
@@ -71,7 +71,6 @@ st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 ############################
 # Dane węzłów + nazwy + obrazki
 ############################
-# (1) Węzły (EPSG:2180)
 punkty = {
     1: (475268, 723118), 2: (472798, 716990), 3: (478390, 727009),
     4: (476650, 725153), 5: (476622, 721571), 6: (477554, 720574),
@@ -86,7 +85,6 @@ punkty = {
     31: (472229, 727344), 32: (476836, 720475)
 }
 
-# (2) Nazwy węzłów
 node_names = {
     1: "PG",
     2: "Parkrun Gdańsk Południe",
@@ -122,7 +120,6 @@ node_names = {
     32: "Gdańsk Śródmieście"
 }
 
-# (3) Funkcja do wczytania i zakodowania obrazka w base64
 def get_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -138,27 +135,25 @@ for n in punkty.keys():
 def euclidean_distance_km(p1, p2):
     return round(math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) / 1000, 1)
 
-# Budowa grafu (3 najbliższych sąsiadów)
+# Tworzymy graf, w którym każdy węzeł łączy się z 3 najbliższymi
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
 for num, coord in punkty.items():
-    distances = []
-    for other_num, other_coord in punkty.items():
-        if other_num != num:
-            dval = euclidean_distance_km(coord, other_coord)
-            distances.append((other_num, dval))
-    distances.sort(key=lambda x: x[1])
-    nearest = distances[:3]
-    for (onum, distv) in nearest:
-        G.add_edge(num, onum, weight=distv)
+    dlist = []
+    for other, other_coord in punkty.items():
+        if other != num:
+            distv = euclidean_distance_km(coord, other_coord)
+            dlist.append((other, distv))
+    dlist.sort(key=lambda x: x[1])
+    for (onum, dval) in dlist[:3]:
+        G.add_edge(num, onum, weight=dval)
 
-# Dodajemy specjalne krawędzie (przyspieszona trasa): między węzłem 32 a 7 oraz 7 a 31,
-# z wagą równą 0.5 (premia) – będą rysowane na niebiesko.
-G.add_edge(32, 7, weight=0.5, special=True)
+# Dodajemy "specjalne" krawędzie 7->31 i 7->32 z wagą 0.5, ale z atrybutem `special=True`.
 G.add_edge(7, 31, weight=0.5, special=True)
+G.add_edge(7, 32, weight=0.5, special=True)
 
-# Konwersja EPSG:2180 -> EPSG:4326
+# Konwersja do EPSG:4326
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for n, (x, y) in punkty.items():
@@ -180,111 +175,32 @@ if "show_shortest" not in st.session_state:
     st.session_state["show_shortest"] = False
 
 ############################
-# Dodajemy specjalną, przyspieszoną trasę (krzywa, niebieska)
-############################
-# Definicja punktów (w metrach, EPSG:2180) dla przyspieszonej trasy
-special_points = [
-    (476836.13, 720474.95),
-    (476867.00, 720974.20),
-    (476939.43, 721489.61),
-    (476922.72, 721731.99),
-    (476822.42, 722202.83),
-    (476588.40, 722484.22),
-    (476131.49, 723186.29),
-    (475905.82, 723356.24),
-    (475579.86, 723542.90),
-    (474625.15, 724115.93),
-    (474358.48, 724280.19),
-    (473638.71, 724997.54),
-    (473142.45, 725519.92),
-    (472633.14, 726172.89),
-    (472428.54, 726608.20),
-    (472284.89, 726986.93),
-    (472229.03, 727344.24)
-]
-
-# Konwersja punktów specjalnych do EPSG:4326
-special_points_latlon = []
-for pt in special_points:
-    lon, lat = transformer.transform(pt[0], pt[1])
-    special_points_latlon.append((lat, lon))
-
-# Funkcja Catmull-Rom do wygładzenia krzywej
-def catmull_rom_chain(P, nPoints=100):
-    if len(P) < 4:
-        return P
-    def catmull_rom_point(P0, P1, P2, P3, t):
-        return 0.5 * ((2 * np.array(P1)) +
-                      (-np.array(P0) + np.array(P2)) * t +
-                      (2*np.array(P0) - 5*np.array(P1) + 4*np.array(P2) - np.array(P3)) * t**2 +
-                      (-np.array(P0) + 3*np.array(P1) - 3*np.array(P2) + np.array(P3)) * t**3)
-    curve = []
-    for i in range(-1, len(P)-2):
-        P0 = P[i] if i >= 0 else P[0]
-        P1 = P[i+1]
-        P2 = P[i+2]
-        P3 = P[i+3] if (i+3) < len(P) else P[-1]
-        for t in np.linspace(0, 1, nPoints//(len(P)-1), endpoint=False):
-            point = catmull_rom_point(P0, P1, P2, P3, t)
-            curve.append(tuple(point))
-    curve.append(P[-1])
-    return curve
-
-special_curve = catmull_rom_chain(special_points_latlon, nPoints=200)
-
-# Obliczenie łącznej odległości specjalnej trasy (w km) z premią 0.5
-def total_special_distance(points):
-    total = 0.0
-    for i in range(len(points)-1):
-        dx = points[i+1][0] - points[i][0]
-        dy = points[i+1][1] - points[i][1]
-        total += math.sqrt(dx*dx + dy*dy)
-    return total * 0.001 * 0.5
-
-special_distance = total_special_distance(special_points)
-
-############################
-# Tworzenie layoutu: 2 kolumny (mapa oraz panel informacyjny)
+# Layout: kolumna mapa + kolumna info
 ############################
 col_map, col_info = st.columns([2, 1])
 
 with col_map:
-    # Rysowanie mapy Folium
-    folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
+    folium_map = folium.Map(
+        location=st.session_state["map_center"],
+        zoom_start=st.session_state["map_zoom"]
+    )
     
-    # Rysujemy krawędzie (szare i specjalne)
+    # Rysujemy "zwykłe" krawędzie – pomijając special=True
     for u, v, data in G.edges(data=True):
+        if data.get("special", False):
+            # Nie rysujemy "bezpośredniej" linii specjalnej
+            continue
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
-        # Jeżeli krawędź specjalna, ustaw kolor niebieski
-        if data.get("special", False):
-            edge_color = "blue"
-            edge_weight = 3
-            tooltip_text = f"{data['weight']} km (specjalna)"
-        else:
-            edge_color = "gray"
-            edge_weight = 2
-            tooltip_text = f"{data['weight']:.1f} km"
-        line = folium.PolyLine(
-            locations=[[lat1, lon1], [lat2, lon2]],
-            color=edge_color,
-            weight=edge_weight,
-            tooltip=tooltip_text
-        )
-        line.add_to(folium_map)
-        # Etykieta w środku krawędzi
-        mid_lat = (lat1 + lat2) / 2
-        mid_lon = (lon1 + lon2) / 2
-        dist_icon = DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:black;">
-                {data['weight']:.1f}
-            </div>
-            """
-        )
-        folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
+        distv = data["weight"]
+        folium.PolyLine(
+            locations=[[lat1, lon1],[lat2, lon2]],
+            color="gray",
+            weight=2,
+            tooltip=f"{distv:.1f} km"
+        ).add_to(folium_map)
     
-    # Rysujemy markery węzłów (bez popupów, by klikanie rejestrowało tooltip)
+    # Rysujemy węzły (markery)
     for node in latlon_nodes:
         latn, lonn = latlon_nodes[node]
         nm = node_names[node]
@@ -302,27 +218,37 @@ with col_map:
             """)
         ).add_to(folium_map)
     
-    # Rysujemy trasę użytkownika (żółta)
+    # Trasa użytkownika (żółta)
     if st.session_state["route"]:
         coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
         folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
     
-    # Dodajemy specjalną trasę – przyspieszoną (niebieska krzywa)
-    folium.PolyLine(
-        locations=special_curve,
-        color="blue",
-        weight=3,
-        tooltip=f"Przyspieszona trasa (0.5x): {special_distance:.1f} km"
-    ).add_to(folium_map)
+    # Rysujemy "specjalne" krawędzie jako niebieskie
+    # (tylko jeśli istnieją w grafie)
+    for (u,v) in [(7,31),(7,32)]:
+        if G.has_edge(u,v):
+            lat1, lon1 = latlon_nodes[u]
+            lat2, lon2 = latlon_nodes[v]
+            distv = G[u][v]["weight"]
+            folium.PolyLine(
+                locations=[[lat1, lon1],[lat2, lon2]],
+                color="blue",
+                weight=3,
+                tooltip=f"{distv} km (przyspieszona)"
+            ).add_to(folium_map)
     
-    # Najkrótsza trasa (zielona), jeśli show_shortest
+    # Najkrótsza (zielona), jeśli show_shortest
     if st.session_state["show_shortest"]:
         sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
         coords_sp = [latlon_nodes[x] for x in sp_nodes]
-        folium.PolyLine(locations=coords_sp, color="green", weight=5,
-                        tooltip="Najkrótsza (12->28)").add_to(folium_map)
+        folium.PolyLine(
+            locations=coords_sp,
+            color="green",
+            weight=5,
+            tooltip="Najkrótsza (12->28)"
+        ).add_to(folium_map)
     
-    # Wyświetlenie mapy, zwracamy tylko last_object_clicked_tooltip
+    # Wyświetlamy mapę
     map_data = st_folium(
         folium_map,
         width=800,
@@ -338,26 +264,24 @@ with col_info:
     
     if clicked_name:
         candidate_node = None
-        # Mapowanie: tooltip = nazwa węzła
         for k, v in node_names.items():
             if v == clicked_name:
                 candidate_node = k
                 break
-        
         if candidate_node is not None:
-            # Wyświetlamy obrazek – skalowany do szerokości kontenera
+            # Wyświetlamy obrazek
             b64 = images_base64[candidate_node]
             img_data = base64.b64decode(b64)
             img = Image.open(io.BytesIO(img_data))
             max_size = (400, 400)
             img.thumbnail(max_size)
-            st.image(img, caption=f"{clicked_name} (ID: {candidate_node})", use_container_width=True)
+            st.image(img, caption=f"{clicked_name} (ID: {candidate_node})")
             
-            # Sprawdzamy, czy punkt można dodać do trasy (czy jest sąsiadem ostatniego)
+            # Czy można dodać?
             last_node = st.session_state["route"][-1] if st.session_state["route"] else None
             allowed = True
             if last_node is not None:
-                if candidate_node not in list(G.neighbors(last_node)):
+                if candidate_node not in G.neighbors(last_node):
                     allowed = False
             
             if st.button("Wybierz punkt", key=f"btn_{candidate_node}", disabled=not allowed):
@@ -365,7 +289,7 @@ with col_info:
                     if candidate_node not in st.session_state["route"]:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
-                        # Ustaw nowe centrum i zoom na wybranym punkcie
+                        # Ustaw nowe centrum i zoom
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
                         st.session_state["map_zoom"] = 13
                         st.rerun()
@@ -392,7 +316,7 @@ with col_info:
             if G.has_edge(u, v):
                 dsum += G[u][v]["weight"]
         return dsum
-
+    
     user_dist = total_user_distance(st.session_state["route"])
     st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
 
