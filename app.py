@@ -39,7 +39,8 @@ with st.sidebar:
         - [Samouczek](#samouczek)
         - [Wyzwanie](#wyzwanie)
         - [Teoria](#teoria)
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
 ############################
@@ -67,6 +68,7 @@ st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 ############################
 # Dane węzłów + nazwy + obrazki
 ############################
+# (1) Węzły (EPSG:2180)
 punkty = {
     1: (475268, 723118), 2: (472798, 716990), 3: (478390, 727009),
     4: (476650, 725153), 5: (476622, 721571), 6: (477554, 720574),
@@ -80,6 +82,7 @@ punkty = {
     28: (496518, 721917), 29: (485721, 721588), 30: (495889, 718798)
 }
 
+# (2) Nazwy węzłów
 node_names = {
     1: "PG",
     2: "Parkrun Gdańsk Południe",
@@ -113,6 +116,7 @@ node_names = {
     30: "Prom Świbno"
 }
 
+# (3) Funkcja do wczytania i zakodowania obrazka w base64
 def get_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -128,7 +132,7 @@ for n in punkty.keys():
 def euclidean_distance_km(p1, p2):
     return round(math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) / 1000, 1)
 
-# Budowa grafu (3 najbliższych)
+# Budowa grafu (3 najbliższych sąsiadów)
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
@@ -165,130 +169,119 @@ if "show_shortest" not in st.session_state:
     st.session_state["show_shortest"] = False
 
 ############################
-# Tworzenie layoutu: dwie kolumny (mapa i panel informacyjny)
+# Tworzenie layoutu: 2 kolumny (mapa oraz panel informacyjny)
 ############################
 col_map, col_info = st.columns([2, 1])
+
 with col_map:
-    map_container = st.empty()
+    # Rysowanie mapy Folium
+    folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    # Funkcja aktualizująca mapę (tylko kontener)
-    def update_map():
-        new_map = create_map()
-        map_container.empty()
-        st_folium(new_map, width=700, height=500, returned_objects=["last_object_clicked_tooltip"])
-
-    # Początkowe wyświetlenie mapy
-    update_map()
-
-############################
-# Funkcja tworząca mapę Folium
-############################
-def create_map():
-    m = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
-
-    # Rysujemy krawędzie + odległość na środku
+    # Rysujemy krawędzie (szare)
     for u, v, data in G.edges(data=True):
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
-        distance = data["weight"]
+        distv = data["weight"]
         line = folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color="gray",
             weight=2,
-            tooltip=f"{distance} km"
+            tooltip=f"{distv} km"
         )
-        line.add_to(m)
+        line.add_to(folium_map)
+        # Środek linii
         mid_lat = (lat1 + lat2) / 2
         mid_lon = (lon1 + lon2) / 2
-        distance_icon = DivIcon(
+        dist_icon = DivIcon(
             html=f"""
-            <div style="font-size:16px;font-weight:bold;color:black;padding:2px 4px;border-radius:0px;">
-                {distance}
+            <div style="font-size:14px;font-weight:bold;color:black;">
+                {distv}
             </div>
             """
         )
-        folium.Marker(location=[mid_lat, mid_lon], icon=distance_icon).add_to(m)
+        folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
 
-    # Rysujemy markery węzłów
-    for node, (lat, lon) in latlon_nodes.items():
-        name = node_names.get(node, f"Node {node}")
-        img64 = images_base64[node]
-        popup_html = f"""
-            <img src="data:image/png;base64,{img64}" width="180" height="200" style="object-fit:cover;"><br>
-            {name}<br>
-        """
-        iframe = IFrame(html=popup_html, width=215, height=235)
-        popup = Popup(iframe, max_width=215)
-        marker_html = f"""
-            <div style="text-align:center;">
-              <div style="background-color:red;color:white;border-radius:50%;
-                          width:24px;height:24px;font-size:12pt;font-weight:bold;
-                          line-height:24px;margin:auto;">
-                {node}
-              </div>
-            </div>
-        """
+    # Rysujemy markery węzłów – bez popupów, by kliknięcie rejestrowało tooltip
+    for node in latlon_nodes:
+        latn, lonn = latlon_nodes[node]
+        nm = node_names[node]
         folium.Marker(
-            location=[lat, lon],
-            popup=popup,
-            tooltip=name,
-            icon=DivIcon(html=marker_html)
-        ).add_to(m)
-    
+            location=[latn, lonn],
+            tooltip=nm,
+            icon=DivIcon(html=f"""
+            <div style="text-align:center;">
+                <div style="background-color:red;color:white;border-radius:50%;
+                            width:24px;height:24px;font-size:12pt;font-weight:bold;
+                            line-height:24px;margin:auto;">
+                {node}
+                </div>
+            </div>
+            """)
+        ).add_to(folium_map)
+
     # Rysujemy trasę użytkownika (żółta)
     if st.session_state["route"]:
         coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
-        folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(m)
-    
-    # Najkrótsza trasa (zielona) jeśli show_shortest
-    if st.session_state["show_shortest"]:
-        shortest_path = nx.shortest_path(G, source=12, target=28, weight='weight')
-        coords_sp = [latlon_nodes[n] for n in shortest_path]
-        folium.PolyLine(
-            locations=coords_sp,
-            color="green",
-            weight=5,
-            tooltip="Najkrótsza ścieżka (12->28)"
-        ).add_to(m)
+        folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
 
-    return m
+    # Najkrótsza trasa (zielona) – jeśli show_shortest = True
+    if st.session_state["show_shortest"]:
+        sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
+        coords_sp = [latlon_nodes[x] for x in sp_nodes]
+        folium.PolyLine(locations=coords_sp, color="green", weight=5,
+                        tooltip="Najkrótsza (12->28)").add_to(folium_map)
+
+    # Wyświetlenie mapy i zwrócenie obiektu klikniętego (tooltip)
+    map_data = st_folium(
+        folium_map,
+        width=700,
+        height=500,
+        returned_objects=["last_object_clicked_tooltip"]
+    )
 
 ############################
-# Logika kliknięcia na marker
+# Logika kliknięcia: zapisujemy tooltip klikniętego markera
 ############################
 clicked_name = None
 if map_data and map_data.get("last_object_clicked_tooltip"):
     clicked_name = map_data["last_object_clicked_tooltip"]
 
 ############################
-# Panel informacyjny (obok mapy)
+# Panel informacyjny (kolumna obok mapy)
 ############################
 with col_info:
     st.subheader("Szczegóły punktu:")
     if clicked_name:
         candidate_node = None
+        # Mapowanie: tooltip = nazwa węzła
         for k, v in node_names.items():
             if v == clicked_name:
                 candidate_node = k
                 break
 
         if candidate_node is not None:
+            # Wyświetlamy obrazek – skalowany do szerokości kontenera
             b64 = images_base64[candidate_node]
             st.image(f"data:image/png;base64,{b64}", use_container_width=True)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
+            # Sprawdzamy, czy punkt można dodać (jeśli jest sąsiadem ostatniego węzła)
             last_node = st.session_state["route"][-1] if st.session_state["route"] else None
             allowed = True
             if last_node is not None:
                 if candidate_node not in list(G.neighbors(last_node)):
                     allowed = False
 
+            # Przycisk „Wybierz punkt”
             if st.button("Wybierz punkt", key=f"btn_{candidate_node}", disabled=not allowed):
                 if allowed:
                     if candidate_node not in st.session_state["route"]:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
-                        update_map()
+                        # Aktualizacja mapy: wycentruj i przybliż na ostatnim punkcie
+                        st.session_state["map_center"] = latlon_nodes[candidate_node]
+                        st.session_state["map_zoom"] = 15
+                        st.rerun()  # odświeżenie mapy (całego kontenera)
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
                 else:
@@ -316,20 +309,15 @@ with col_info:
     user_dist = total_user_distance(st.session_state["route"])
     st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
 
-    if st.session_state["start_time"] is not None:
-        elapsed = time.time() - st.session_state["start_time"]
-        st.write(f"Czas od rozpoczęcia trasy: {elapsed:.1f} s")
+############################
+# Rozpoczęcie / pomiar czasu
+############################
+if st.session_state["route"] and st.session_state["start_time"] is None:
+    st.session_state["start_time"] = time.time()
 
-############################
-# Aktualizacja stanu po kliknięciu – ustawiamy center i zoom (na ostatnim wybranym punkcie)
-############################
-if "last_object_clicked_tooltip" in st.session_state:
-    for node, name in node_names.items():
-        if name == st.session_state["last_object_clicked_tooltip"]:
-            st.session_state["map_center"] = latlon_nodes[node]
-            st.session_state["map_zoom"] = 15
-            update_map()
-            break
+if st.session_state["start_time"] is not None:
+    elapsed = time.time() - st.session_state["start_time"]
+    st.write(f"Czas od rozpoczęcia trasy: {elapsed:.1f} s")
 
 ############################
 # Przycisk reset
@@ -338,10 +326,10 @@ if st.button("Resetuj trasę"):
     st.session_state["route"] = []
     st.session_state["start_time"] = None
     st.session_state["show_shortest"] = False
-    update_map()
+    st.rerun()
 
 ############################
-# Najkrótsza trasa (zielona) po dotarciu do węzła 28
+# Najkrótsza trasa (zielona) – wyświetlana po dotarciu do węzła 28
 ############################
 if 28 in st.session_state["route"]:
     st.session_state["show_shortest"] = True
@@ -351,7 +339,7 @@ if 28 in st.session_state["route"]:
         st.write(f"Najkrótsza możliwa trasa (12 -> 28): {shortest_nodes}")
         st.write(f"Długość najkrótszej trasy: {shortest_len:.1f} km")
         st.success("Gratulacje, dotarłeś do węzła 28!")
-        update_map()
+        st.rerun()
     else:
         st.write("Brak ścieżki między 12 a 28.")
 
