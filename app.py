@@ -135,7 +135,6 @@ import networkx as nx
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
-
 for num, coord in punkty.items():
     pairs = []
     for other, oc2 in punkty.items():
@@ -145,8 +144,7 @@ for num, coord in punkty.items():
     pairs.sort(key=lambda x: x[1])
     for (o, distv) in pairs[:3]:
         G.add_edge(num, o, weight=distv)
-
-# Krawędzie specjalne
+# Krawędzie specjalne – nie modyfikujemy ich
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
@@ -209,7 +207,7 @@ COLOR_MAP = {
 }
 
 #########################
-# Losowanie 6 krawędzi (tylko raz)
+# Losowanie 6 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
 #########################
 def assign_modifiers_once():
     all_edges = []
@@ -291,6 +289,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
+# Dla niebieskiej trasy wyświetlamy oryginalne (niezmodyfikowane) odległości – specjalnie dla 31->7 oraz 7->32
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -299,39 +298,35 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         weight=4,
         dash_array="5,10"
     ).add_to(fmap)
+    # Dla krawędzi (31,7) oraz (7,32) wyświetlamy oryginalne wagi (bez modyfikatorów)
+    orig_31_7 = euclidean_distance_km(punkty[31], punkty[7])
+    orig_7_32 = euclidean_distance_km(punkty[7], punkty[32])
     idx_7 = find_node_index_approx(pts_2180, node7_xy, label="7", tolerance=20.0)
-    if idx_7 is None:
-        return
-    dist_31_7 = 0.0
-    for i in range(idx_7):
-        dist_31_7 += dist2180(pts_2180[i], pts_2180[i+1])
-    dist_7_32 = 0.0
-    for i in range(idx_7, len(pts_2180) - 1):
-        dist_7_32 += dist2180(pts_2180[i], pts_2180[i+1])
-    mid_31_7 = idx_7 // 2
-    latm1, lonm1 = to_latlon(pts_2180[mid_31_7])
-    folium.Marker(
-        [latm1, lonm1],
-        icon=DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;">
-                {dist_31_7/1000:.1f}
-            </div>
-            """
-        )
-    ).add_to(fmap)
-    mid_7_32 = (idx_7 + len(pts_2180) - 1) // 2
-    latm2, lonm2 = to_latlon(pts_2180[mid_7_32])
-    folium.Marker(
-        [latm2, lonm2],
-        icon=DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;">
-                {dist_7_32/1000:.1f}
-            </div>
-            """
-        )
-    ).add_to(fmap)
+    if idx_7 is not None:
+        mid_idx_31_7 = idx_7 // 2
+        latm, lonm = to_latlon(pts_2180[mid_idx_31_7])
+        folium.Marker(
+            [latm, lonm],
+            icon=DivIcon(
+                html=f"""
+                <div style="font-size:14px;font-weight:bold;color:blue;">
+                    {orig_31_7}
+                </div>
+                """
+            )
+        ).add_to(fmap)
+        mid_idx_7_32 = (idx_7 + len(pts_2180) - 1) // 2
+        latm, lonm = to_latlon(pts_2180[mid_idx_7_32])
+        folium.Marker(
+            [latm, lonm],
+            icon=DivIcon(
+                html=f"""
+                <div style="font-size:14px;font-weight:bold;color:blue;">
+                    {orig_7_32}
+                </div>
+                """
+            )
+        ).add_to(fmap)
 
 ###########################################
 # LOGIKA APLIKACJI
@@ -369,15 +364,14 @@ if st.session_state["game_over"]:
 
     st.markdown("#### Finalna mapa:")
     final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
-
-    # Rysujemy krawędzie – dla zmodyfikowanych wyświetlamy samą wartość, bez "km"
+    # Rysujemy krawędzie – dla zmodyfikowanych wyświetlamy przeliczoną wartość (bez "km")
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
             continue
         color, distv = get_edge_color_and_weight(u, v)
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
-        tooltip_text = f"{distv}" if tuple(sorted((u, v))) in st.session_state["edge_mods"] else f"{distv} km"
+        tooltip_text = f"{distv}"  # wyświetlamy przeliczoną wartość
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
@@ -396,7 +390,6 @@ if st.session_state["game_over"]:
                 """
             )
         ).add_to(final_map)
-
     for nd, (latn, lonn) in latlon_nodes.items():
         folium.Marker(
             location=[latn, lonn],
@@ -413,7 +406,6 @@ if st.session_state["game_over"]:
                 """
             )
         ).add_to(final_map)
-
     if st.session_state["route"]:
         coords_user = [latlon_nodes[n] for n in st.session_state["route"]]
         folium.PolyLine(
@@ -422,7 +414,6 @@ if st.session_state["game_over"]:
             weight=4,
             tooltip="Twoja trasa"
         ).add_to(final_map)
-
     if shortest_nodes:
         coords_short = [latlon_nodes[n] for n in shortest_nodes]
         folium.PolyLine(
@@ -431,15 +422,12 @@ if st.session_state["game_over"]:
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
-
-    # Rysujemy niebieską trasę 31->7->32 (bez tła i bez "km")
+    # Rysujemy niebieską trasę 31->7->32 (bez modyfikatorów)
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
     draw_single_line_31_7_32(final_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
-
     st_folium(final_map, width=800, height=600)
-
     if st.button("Resetuj trasę"):
         st.session_state["route"] = []
         st.session_state["start_time"] = None
@@ -449,7 +437,6 @@ if st.session_state["game_over"]:
         st.session_state["modifiers_assigned"] = False
         st.session_state["edge_mods"] = {}
         st.rerun()
-
 else:
     # Widok interaktywny
     col_map, col_info = st.columns([2, 1])
@@ -461,7 +448,7 @@ else:
             color, distv = get_edge_color_and_weight(u, v)
             lat1, lon1 = latlon_nodes[u]
             lat2, lon2 = latlon_nodes[v]
-            tooltip_text = f"{distv}" if tuple(sorted((u, v))) in st.session_state["edge_mods"] else f"{distv} km"
+            tooltip_text = f"{distv}"  # wyświetlamy przeliczoną wartość, jeśli zmodyfikowana
             folium.PolyLine(
                 [[lat1, lon1], [lat2, lon2]],
                 color=color,
