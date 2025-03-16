@@ -8,7 +8,8 @@ from pyproj import Transformer
 import networkx as nx
 from folium import DivIcon, IFrame, Popup
 import os
-
+from PIL import Image
+import io
 
 ############################
 # Ustawienia strony (Streamlit)
@@ -263,7 +264,14 @@ with col_info:
         if candidate_node is not None:
             # Wyświetlamy obrazek – skalowany do szerokości kontenera
             b64 = images_base64[candidate_node]
-            st.image(f"data:image/png;base64,{b64}")
+             # Konwersja base64 do obrazka PIL
+            img_data = base64.b64decode(b64)
+            img = Image.open(io.BytesIO(img_data))
+            
+            # Ustawiamy maksymalny rozmiar (np. 300 pikseli szerokości)
+            max_size = (300, 300)  # zachowując proporcje
+            img.thumbnail(max_size)
+            st.image(img)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
             # Sprawdzamy, czy punkt można dodać (jeśli jest sąsiadem ostatniego węzła)
