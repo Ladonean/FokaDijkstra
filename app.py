@@ -10,7 +10,7 @@ from PIL import Image
 import networkx as nx
 from folium import DivIcon
 from pyproj import Transformer
-import random  # DO LOSOWANIA
+import random
 import pandas as pd
 
 ############################
@@ -61,9 +61,8 @@ st.write("""\
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 ############################
-# Dane węzłów, nazwy
+# Dane węzłów (uproszczona wersja do debugowania)
 ############################
-# Używam uproszczonej wersji, aby łatwiej debugować – w pełnej wersji występuje więcej węzłów
 punkty = {
     12: (465439, 724391),
     7: (474358.48, 724280.19),
@@ -73,15 +72,15 @@ punkty = {
 }
 
 node_names = {
-    7: "Gdańsk Wrzeszcz",
     12: "Lotnisko",
+    7: "Gdańsk Wrzeszcz",
     28: "Punkt Widokowy",
     31: "Gdańsk Oliwa",
     32: "Gdańsk Śródmieście"
 }
 
 ############################
-# Funkcja pobierająca obrazek (base64)
+# Funkcja pobierająca obrazek
 ############################
 def get_image_base64(path):
     with open(path, "rb") as f:
@@ -96,7 +95,7 @@ for n in punkty.keys():
         images_base64[n] = get_image_base64("img_placeholder.png")
 
 ############################
-# Funkcja obliczająca odległość euklidesową (km)
+# Obliczanie odległości
 ############################
 def euclidean_distance_km(p1, p2):
     return round(math.dist(p1, p2) / 1000, 2)
@@ -111,11 +110,10 @@ for num, coord in punkty.items():
     for other, oc2 in punkty.items():
         if other != num:
             dval = euclidean_distance_km(coord, oc2)
-            # Dodajemy tylko jedną krawędź (graf nieskierowany)
             if not G.has_edge(num, other):
                 G.add_edge(num, other, weight=dval)
 
-# Krawędzie specjalne – nie modyfikujemy ich
+# Krawędzie specjalne – nie modyfikujemy ich (31–7 oraz 7–32)
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
@@ -135,7 +133,7 @@ for n, (x, y) in punkty.items():
     latlon_nodes[n] = (lat, lon)
 
 ############################
-# Funkcja obliczająca całkowitą drogę użytkownika
+# Całkowita droga użytkownika
 ############################
 def total_user_distance(rt):
     s = 0
@@ -171,7 +169,7 @@ EDGE_MULTIPLIERS = [0.4, 0.6, 0.8, 1.2, 1.4, 1.6]
 COLOR_MAP = {0.4: "pink", 0.6: "lightgreen", 0.8: "lightblue", 1.2: "orange", 1.4: "red", 1.6: "brown"}
 
 #########################
-# Losowanie modyfikatorów (pomijamy specjalne krawędzie)
+# Losowanie modyfikatorów – pomijamy krawędzie specjalne
 #########################
 def assign_modifiers_once():
     all_edges = []
@@ -182,8 +180,9 @@ def assign_modifiers_once():
         all_edges.append(ed)
     all_edges = list(set(all_edges))
     if len(all_edges) < 1:
-        st.warning("Nie ma wystarczającej liczby krawędzi do losowania modyfikatorów.")
+        st.warning("Brak wystarczającej liczby krawędzi do losowania modyfikatorów.")
         return
+    # Losujemy – można wybrać min(6, len(all_edges))
     chosen = random.sample(all_edges, min(6, len(all_edges)))
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
@@ -196,19 +195,20 @@ def assign_modifiers_once():
         G[a][b]["weight"] = new_w
         if G.has_edge(b, a):
             G[b][a]["weight"] = new_w
-        st.session_state["edge_mods"][ed] = (color, new_w)
+        # Zapisujemy kolor, nową wagę oraz mnożnik
+        st.session_state["edge_mods"][ed] = (color, new_w, mult)
         st.write(f"Krawędź {a}-{b}: {old_w} -> {new_w} (mnożnik: {mult})")
     st.session_state["modifiers_assigned"] = True
     st.write("Przypisane modyfikatory:", st.session_state["edge_mods"])
     st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
 
 #########################
-# Funkcja pobierająca kolor i przeliczoną wagę z grafu
+# Pobieranie koloru i wagi z grafu (zmodyfikowanej)
 #########################
 def get_edge_color_and_weight(u, v):
     ed = tuple(sorted((u, v)))
     if ed in st.session_state["edge_mods"]:
-        (clr, new_w) = st.session_state["edge_mods"][ed]
+        (clr, new_w, _) = st.session_state["edge_mods"][ed]
         return (clr, G[u][v]["weight"])
     return ("gray", G[u][v]["weight"])
 
@@ -255,7 +255,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
-# Funkcja rysująca specjalną niebieską trasę – wyświetlamy oryginalne (bazowe) odległości
+# Ta funkcja rysuje specjalną niebieską trasę i wyświetla oryginalne (bazowe) odległości
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -288,6 +288,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
 ###########################################
 # LOGIKA APLIKACJI
 ###########################################
+# (Przy rozpoczęciu trasy – pierwszy wybór musi być 12)
 if st.session_state["game_over"]:
     if st.session_state["final_time"] is None and st.session_state["start_time"] is not None:
         st.session_state["final_time"] = time.time() - st.session_state["start_time"]
@@ -369,32 +370,30 @@ if st.session_state["game_over"]:
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
-    # Rysujemy niebieską trasę specjalną (31->7->32) – wyświetlamy oryginalne odległości
+    # Rysujemy specjalną niebieską trasę (bez modyfikatora)
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
     draw_single_line_31_7_32(final_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
     st_folium(final_map, width=800, height=600)
     
-    # Pod mapą wyświetlamy tabelę z modyfikatorami, jeżeli zostały przypisane
+    # Tabela modyfikatorów – pod mapą
     if st.session_state["modifiers_assigned"]:
         mod_list = []
-        for ed, (color, mod_weight) in st.session_state["edge_mods"].items():
+        for ed, (color, mod_weight, multiplier) in st.session_state["edge_mods"].items():
             u, v = ed
             base = euclidean_distance_km(punkty[u], punkty[v])
-            # Obliczamy mnożnik na podstawie nowych wag, jeśli base jest niezerowy
-            mult = round(mod_weight / base, 2) if base > 0 else "N/A"
             mod_list.append({
                 "Krawędź": f"{u}-{v}",
                 "Waga bazowa": base,
-                "Mnożnik": mult,
+                "Mnożnik": multiplier,
                 "Waga zmodyfikowana": mod_weight,
                 "Kolor": color
             })
         df_mod = pd.DataFrame(mod_list)
         st.subheader("Przypisane modyfikatory:")
         st.dataframe(df_mod)
-
+    
     if st.button("Resetuj trasę"):
         st.session_state["route"] = []
         st.session_state["start_time"] = None
