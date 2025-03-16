@@ -265,7 +265,7 @@ def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
         [lat_mid1, lon_mid1],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+            <div style="font-size:14px;font-weight:bold;color:black;padding:3px;border-radius:5px;">
                 {dist_31_7/1000:.1f}
             </div>
             """
@@ -279,7 +279,7 @@ def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
         [lat_mid2, lon_mid2],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+            <div style="font-size:14px;font-weight:bold;color:black;padding:3px;border-radius:5px;">
                 {dist_7_32/1000:.1f}
             </div>
             """
@@ -388,7 +388,7 @@ if st.session_state["game_over"]:
         st.session_state["show_shortest"]=False
         st.session_state["game_over"]=False
         st.session_state["final_time"]=None
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     # Interaktywny
@@ -492,7 +492,7 @@ else:
                             st.session_state["start_time"]=time.time()
                         if clicked_id==28:
                             st.session_state["game_over"]=True
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
             else:
@@ -516,7 +516,7 @@ else:
         st.session_state["show_shortest"]=False
         st.session_state["game_over"]=False
         st.session_state["final_time"]=None
-        st.experimental_rerun()
+        st.rerun()
 
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""\
