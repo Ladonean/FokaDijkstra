@@ -460,6 +460,7 @@ if not st.session_state["game_over"]:
 
 # Sekcja 4: Teoria (zawsze wyświetlana)
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
+st.write(final_route)
 st.write("""\
 Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
 Możesz myśleć o nim jak o szukaniu najtańszej trasy na mapie:
