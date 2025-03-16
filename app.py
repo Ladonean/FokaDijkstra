@@ -223,6 +223,9 @@ def assign_modifiers_once():
     chosen_6 = random.sample(all_edges, 6)
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
+    
+    # Tworzymy ładną tabelkę do wyświetlenia od razu po losowaniu
+    table_modifiers = []
     for i, ed in enumerate(chosen_6):
         mult = shuffled[i]
         color = COLOR_MAP[mult]
@@ -233,10 +236,24 @@ def assign_modifiers_once():
         if G.has_edge(b, a):
             G[b][a]["weight"] = new_w
         st.session_state["edge_mods"][ed] = (color, new_w)
-        st.write(f"Krawędź {a}-{b}: {old_w} -> {new_w} (mnożnik: {mult})")
+        
+        # Dodajemy dane do tabelki
+        table_modifiers.append({
+            "Trasa": f"{a} ↔ {b}",
+            "Nazwa punktów": f"{node_names[a]} ↔ {node_names[b]}",
+            "Bazowa odległość [km]": old_w,
+            "Mnożnik": mult,
+            "Zmodyfikowana odległość [km]": new_w,
+            "Kolor na mapie": color
+        })
+        
     st.session_state["modifiers_assigned"] = True
-    st.write("Przypisane modyfikatory:", st.session_state["edge_mods"])
-    st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
+
+    # Wyświetlamy tabelkę od razu
+    st.subheader("Trasy z przypisanymi modyfikatorami")
+    st.write("Poniższa tabela pokazuje, które trasy mają modyfikatory oraz jakie są ich wartości bazowe i po przeliczeniu:")
+    st.table(table_modifiers)
+
 
 #########################
 # Rysowanie krawędzi – pobieramy wagę z grafu G
