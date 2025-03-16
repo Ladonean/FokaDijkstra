@@ -242,7 +242,7 @@ def assign_modifiers_once():
 #########################
 def get_edge_color_and_weight(u, v):
     w = G[u][v]["weight"]
-    c = "gray"
+    c = "black"
     ed = tuple(sorted((u, v)))
     if ed in st.session_state["edge_mods"]:
         (clr, mul) = st.session_state["edge_mods"][ed]
@@ -327,8 +327,8 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm2, lonm2],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
-                {dist_7_32/1000:.1f} km
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+                {dist_7_32/1000:.1f}
             </div>
             """
         )
