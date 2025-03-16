@@ -324,7 +324,7 @@ with col_info:
             img = Image.open(io.BytesIO(img_data))
             max_size = (300, 300)
             img.thumbnail(max_size)
-            st.image(img, use_container_width=True)
+            st.image(img)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
             # Sprawdzamy, czy punkt można dodać (jeśli jest sąsiadem ostatniego wybranego)
