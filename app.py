@@ -402,7 +402,7 @@ if st.session_state["game_over"]:
         st.session_state["final_time"]=None
         st.session_state["modifiers_assigned"]=False
         st.session_state["edge_modifiers"]={}
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     ##################################################
@@ -520,7 +520,7 @@ else:
 
                         if clicked_id==28:
                             st.session_state["game_over"]=True
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
             else:
@@ -548,7 +548,7 @@ else:
         st.session_state["final_time"]=None
         st.session_state["modifiers_assigned"]=False
         st.session_state["edge_modifiers"]={}
-        st.experimental_rerun()
+        st.rerun()
 
 ############################################################
 # Teoria
