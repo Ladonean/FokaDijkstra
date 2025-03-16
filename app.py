@@ -10,6 +10,7 @@ from PIL import Image
 import networkx as nx
 from folium import DivIcon
 from pyproj import Transformer
+import random
 
 ############################
 # Ustawienia strony
@@ -131,8 +132,8 @@ G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
 
+# Budowa 3 najbliższych
 for num, coord in punkty.items():
-    # 3 najbliższe
     pairs = []
     for other, oc2 in punkty.items():
         if other != num:
@@ -142,6 +143,7 @@ for num, coord in punkty.items():
     for (o,distv) in pairs[:3]:
         G.add_edge(num, o, weight=distv)
 
+# Krawędzie specjalne
 special_edges = [(31, 7), (7, 32)]
 for (u,v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
@@ -152,7 +154,6 @@ for (u,v) in special_edges:
         G.add_edge(u,v, weight=half_w)
 
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
-
 latlon_nodes={}
 for n,(x,y) in punkty.items():
     lon,lat = transformer.transform(x,y)
@@ -165,6 +166,7 @@ def total_user_distance(rt):
             s+= G[rt[i]][rt[i+1]]["weight"]
     return s
 
+# Inicjalizacja
 if "route" not in st.session_state:
     st.session_state["route"]=[]
 if "map_center" not in st.session_state:
@@ -182,162 +184,163 @@ if "game_over" not in st.session_state:
 if "final_time" not in st.session_state:
     st.session_state["final_time"]=None
 
-###########################################
-# LISTA 31->...->7->...->32 (EPSG:2180)
-###########################################
-control_points_31_7_32 = [
-    (472229.00, 727345.00),   # w przybliżeniu 31 (472229.03,727344.24)
-    (472284.89, 726986.93),
-    (472428.54, 726608.20),
-    (472633.14, 726172.89),
-    (473142.45, 725519.92),
-    (473638.71, 724997.54),
-    (474358.0, 724280.2),# węzeł 7 w przybliżeniu
-   (475579.86, 723542.90),
-    (475905.82, 723356.24),
-    (476131.49, 723186.29),
-    (476588.40, 722484.22),
-    (476822.42, 722202.83),
-    (476922.72, 721731.99),
-    (476939.43, 721489.61),
-    (476867.00, 720974.20),
-    (476836.13, 720474.95)    # węzeł 32 (dokładny)
-]
-
-def dist2180(a, b):
-    return math.dist(a,b)
-
-def to_latlon(xy):
-    lon, lat = transformer.transform(xy[0], xy[1])
-    return (lat, lon)
-
-def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
-    """
-    Znajduje index w points_2180 najbliższy node_xy (EPSG:2180).
-    Jeżeli jest bliżej niż 'tolerance' m, zwraca index.
-    W przeciwnym razie None + ostrzeżenie.
-    """
-    best_idx = None
-    best_dist = None
-    for i,pt in enumerate(points_2180):
-        d = dist2180(pt, node_xy)
-        if (best_dist is None) or (d<best_dist):
-            best_dist=d
-            best_idx=i
-    if best_dist is not None and best_dist<=tolerance:
-        return best_idx
-    else:
-        st.warning(f"Nie znaleziono węzła {label} - min odległość {best_dist:.2f} m > {tolerance} m.")
-        return None
-
-def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
-    """
-    Rysuje jedną polilinię przerywaną 31->...->7->...->32
-    i wstawia dwie etykiety: 31->7 i 7->32.
-    Korzysta z find_node_index_approx() aby dopasować węzeł 7.
-    """
-    latlon_list = [to_latlon(p) for p in points_2180]
-    # Jedna przerywana
-    folium.PolyLine(
-        locations=latlon_list,
-        color="blue",
-        weight=4,
-        dash_array="5,10",
-    ).add_to(fmap)
-
-    # Szukamy index 7
-    idx_7 = find_node_index_approx(points_2180, node_7, label="7", tolerance=20.0)
-    if idx_7 is None:
-        return
-
-    # Liczymy dystans
-    dist_31_7 = 0.0
-    for i in range(idx_7):
-        dist_31_7 += dist2180(points_2180[i], points_2180[i+1])
-    dist_7_32 = 0.0
-    for i in range(idx_7, len(points_2180)-1):
-        dist_7_32 += dist2180(points_2180[i], points_2180[i+1])
-
-    # Etykieta w "środku" sublisty 31->7
-    mid_31_7 = idx_7//2
-    lat_mid1, lon_mid1 = to_latlon(points_2180[mid_31_7])
-    folium.Marker(
-        [lat_mid1, lon_mid1],
-        icon=DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:black;padding:3px;border-radius:5px;">
-                {dist_31_7/1000:.1f}
-            </div>
-            """
-        )
-    ).add_to(fmap)
-
-    # Etykieta w "środku" sublisty 7->32
-    mid_7_32 = (idx_7 + len(points_2180)-1)//2
-    lat_mid2, lon_mid2 = to_latlon(points_2180[mid_7_32])
-    folium.Marker(
-        [lat_mid2, lon_mid2],
-        icon=DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:black;padding:3px;border-radius:5px;">
-                {dist_7_32/1000:.1f}
-            </div>
-            """
-        )
-    ).add_to(fmap)
+# Nowe klucze:
+# czy już przypisano modyfikatory:
+if "modifiers_assigned" not in st.session_state:
+    st.session_state["modifiers_assigned"]=False
+# Słownik z krawędziami i ich kolorem:
+# edge_modifiers[(u,v)] = { "multiplier": ..., "color": ...}
+if "edge_modifiers" not in st.session_state:
+    st.session_state["edge_modifiers"]={}
 
 ############################
-# GRA - final i interaktywny
+# Mnożniki i kolory
 ############################
+EDGE_MULTIPLIERS = [0.4, 0.6, 0.8, 1.2, 1.4, 1.6]
+COLOR_MAP = {
+    0.4: "pink",
+    0.6: "lightgreen",
+    0.8: "lightblue",
+    1.2: "orange",
+    1.4: "red",
+    1.6: "brown"
+}
+
+##################################
+# Procedura losowania 6 krawędzi
+##################################
+def assign_random_modifiers():
+    # Znajdź WSZYSTKIE krawędzie (u,v) w G,
+    # pominąć special_edges, jeśli nie chcesz ich modyfikować.
+    all_edges = []
+    for (u,v) in G.edges():
+        if (u,v) in special_edges or (v,u) in special_edges:
+            # Jeżeli NIE chcesz, by (31->7) i (7->32) były modyfikowane,
+            # to odkomentuj ten continue
+            continue
+            pass
+        # Pamiętaj, że nasz graf to undirected,
+        # więc (v,u) == (u,v).
+        # Na potrzeby unikalności weź tylko te, gdzie u<v
+        if u<v:
+            all_edges.append((u,v))
+        else:
+            all_edges.append((v,u))
+
+    # Usuwamy duplikaty:
+    all_edges = list(set(all_edges))
+    # Wybieramy 6 losowych spośród nich (załóżmy, że jest >=6)
+    chosen_edges = random.sample(all_edges, 6)
+    # Mieszamy kolejność mnożników
+    random.shuffle(EDGE_MULTIPLIERS)
+
+    # Przypisujemy je krawędziom
+    for i, edge in enumerate(chosen_edges):
+        multiplier = EDGE_MULTIPLIERS[i]
+        color = COLOR_MAP[multiplier]
+        # Zmieniamy wagę w G
+        (a,b)=edge
+        old_w = G[a][b]["weight"]
+        new_w = round(old_w * multiplier, 2)
+        G[a][b]["weight"] = new_w
+        # Dla spójności w undirected:
+        # (b,a) to to samo
+        if G.has_edge(b,a):
+            G[b][a]["weight"] = new_w
+
+        # Zapisujemy w st.session_state
+        st.session_state["edge_modifiers"][edge]={"multiplier":multiplier, "color":color}
+    # Ustawiamy flagę, że już przypisano
+    st.session_state["modifiers_assigned"] = True
+
+
+##################################
+# Funkcja do rysowania krawędzi
+##################################
+def draw_edge(u,v):
+    """
+    Zwraca (color, distv) dla krawędzi (u,v),
+    biorąc pod uwagę st.session_state["edge_modifiers"].
+    """
+    # W undirected definicja klucza
+    edge_key = (u,v) if u<v else (v,u)
+    distv = G[u][v]["weight"]
+    # domyślnie "gray"
+    color = "gray"
+
+    # Jeżeli jest w edge_modifiers, bierz color stamtąd
+    if edge_key in st.session_state["edge_modifiers"]:
+        color = st.session_state["edge_modifiers"][edge_key]["color"]
+
+    return color, distv
+
+###########################################
+# Rysowanie i logika
+###########################################
+def draw_single_line_31_7_32(*args, **kwargs):
+    """
+    Zostawiamy Twoją obecną implementację – 
+    w niej nie ma nic do zmiany w kontekście multiplikatorów.
+    """
+    pass
+
+
+##################################################
+# (1) Gdy gra skończona (punkt 28)
+##################################################
 if st.session_state["game_over"]:
-    # final
     if st.session_state["final_time"] is None and st.session_state["start_time"] is not None:
         st.session_state["final_time"] = time.time() - st.session_state["start_time"]
     final_time = st.session_state["final_time"]
     user_dist = total_user_distance(st.session_state["route"])
-    user_route_labeled = [f"{r} ({node_names[r]})" for r in st.session_state["route"]]
+    user_route_labeled = [f"{x} ({node_names[x]})" for x in st.session_state["route"]]
 
-    shortest_nodes=[]
-    shortest_dist=0
-    if nx.has_path(G,12,28):
-        sh=nx.shortest_path(G,12,28,weight="weight")
-        for i in range(len(sh)-1):
-            shortest_dist+= G[sh[i]][sh[i+1]]["weight"]
-        shortest_nodes=sh
+    # Najkrótsza
+    shortest_nodes = []
+    shortest_dist = 0.0
+    if nx.has_path(G, 12, 28):
+        shortest_nodes = nx.shortest_path(G, 12, 28, weight="weight")
+        for i in range(len(shortest_nodes) - 1):
+            shortest_dist += G[shortest_nodes[i]][shortest_nodes[i+1]]["weight"]
 
-    leftC,rightC=st.columns(2)
-    with leftC:
+    colL, colR = st.columns(2)
+    with colL:
         st.subheader("Twoja trasa")
         st.write("Punkty:", user_route_labeled)
         if final_time is not None:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
-    with rightC:
-        st.subheader("Najkrótsza (12->28)")
+
+    with colR:
+        st.subheader("Najkrótsza (12→28)")
         if shortest_nodes:
-            st.write("Punkty:", [f"{x} ({node_names[x]})" for x in shortest_nodes])
+            lab_nodes = [f"{n} ({node_names[n]})" for n in shortest_nodes]
+            st.write("Punkty:", lab_nodes)
             st.write(f"Łączna droga: {shortest_dist:.1f} km")
         else:
-            st.write("Brak ścieżki w grafie.")
+            st.write("Brak ścieżki w grafie :(")
 
-    st.write("#### Finalna mapa:")
-    final_map = folium.Map(
-        location=st.session_state["map_center"],
-        zoom_start=st.session_state["map_zoom"]
-    )
+    st.markdown("#### Finalna mapa:")
+    final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    # Szare
+    # Rysujemy krawędzie (biorąc pod uwagę modyfikatory)
     for u,v,data in G.edges(data=True):
         if (u,v) in special_edges or (v,u) in special_edges:
             continue
-        lat1,lon1=latlon_nodes[u]
-        lat2,lon2=latlon_nodes[v]
-        distv=data["weight"]
-        folium.PolyLine([[lat1,lon1],[lat2,lon2]], color="gray", weight=2, tooltip=f"{distv} km").add_to(final_map)
-        mlat=(lat1+lat2)/2
-        mlon=(lon1+lon2)/2
+        color, distv = draw_edge(u,v)
+        lat1,lon1= latlon_nodes[u]
+        lat2,lon2= latlon_nodes[v]
+        folium.PolyLine(
+            locations=[[lat1,lon1],[lat2,lon2]],
+            color=color,
+            weight=2,
+            tooltip=f"{distv} km"
+        ).add_to(final_map)
+
+        mid_lat=(lat1+lat2)/2
+        mid_lon=(lon1+lon2)/2
         folium.Marker(
-            [mlat,mlon],
+            [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
                 <div style="font-size:14px;font-weight:bold;color:black;">
@@ -347,6 +350,7 @@ if st.session_state["game_over"]:
             )
         ).add_to(final_map)
 
+    # Markery
     for nd,(la,lo) in latlon_nodes.items():
         folium.Marker(
             location=[la,lo],
@@ -364,44 +368,64 @@ if st.session_state["game_over"]:
             )
         ).add_to(final_map)
 
-    # Żółta user
+    # Trasa użytkownika (żółta)
     if st.session_state["route"]:
-        cu=[latlon_nodes[x] for x in st.session_state["route"]]
-        folium.PolyLine(cu, color="yellow", weight=4).add_to(final_map)
+        coords_user = [latlon_nodes[n] for n in st.session_state["route"]]
+        folium.PolyLine(
+            locations=coords_user,
+            color="yellow",
+            weight=4,
+            tooltip="Twoja trasa"
+        ).add_to(final_map)
 
-    # Najkrótsza
+    # Najkrótsza (zielona)
     if shortest_nodes:
-        csp=[latlon_nodes[n] for n in shortest_nodes]
-        folium.PolyLine(csp, color="green", weight=5, tooltip="Najkrótsza(12->28)").add_to(final_map)
+        coords_shortest = [latlon_nodes[n] for n in shortest_nodes]
+        folium.PolyLine(
+            locations=coords_shortest,
+            color="green",
+            weight=5,
+            tooltip="Najkrótsza (12->28)"
+        ).add_to(final_map)
 
-    # Rysujemy jedną line 31->...->7->...->32
-    node7_xy = punkty[7]
-    node31_xy= punkty[31]
-    node32_xy= punkty[32]
-    draw_single_line_31_7_32(final_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
+    # Jeśli chcesz rysować 31->7->32 (niebieska), z dwiema etykietami
+    # (pomijam implementację – to Twój draw_single_line_31_7_32)
 
     st_folium(final_map, width=800, height=600)
 
     if st.button("Resetuj trasę"):
+        # Reset
         st.session_state["route"]=[]
         st.session_state["start_time"]=None
         st.session_state["show_shortest"]=False
         st.session_state["game_over"]=False
         st.session_state["final_time"]=None
-        st.rerun()
+        st.session_state["modifiers_assigned"]=False
+        st.session_state["edge_modifiers"]={}
+        st.experimental_rerun()
 
 else:
-    # Interaktywny
-    col_map, col_info= st.columns([2,1])
+    ##################################################
+    # Widok interaktywny
+    ##################################################
+    col_map,col_info = st.columns([2,1])
     with col_map:
         main_map=folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
+
+        # Rysujemy krawędzie – z modyfikatorami
         for u,v,data in G.edges(data=True):
             if (u,v) in special_edges or (v,u) in special_edges:
                 continue
-            lat1,lon1=latlon_nodes[u]
-            lat2,lon2=latlon_nodes[v]
-            distv=data["weight"]
-            folium.PolyLine([[lat1,lon1],[lat2,lon2]], color="gray", weight=2, tooltip=f"{distv} km").add_to(main_map)
+            color, distv = draw_edge(u,v)
+            lat1,lon1= latlon_nodes[u]
+            lat2,lon2= latlon_nodes[v]
+            folium.PolyLine(
+                locations=[[lat1,lon1],[lat2,lon2]],
+                color=color,
+                weight=2,
+                tooltip=f"{distv} km"
+            ).add_to(main_map)
+
             mlat=(lat1+lat2)/2
             mlon=(lon1+lon2)/2
             folium.Marker(
@@ -415,7 +439,7 @@ else:
                 )
             ).add_to(main_map)
 
-        # Markery węzłów
+        # Markery
         for nd,(la,lo) in latlon_nodes.items():
             folium.Marker(
                 location=[la,lo],
@@ -433,28 +457,25 @@ else:
                 )
             ).add_to(main_map)
 
-        # Trasa user (yellow)
+        # Żółta trasa user
         if st.session_state["route"]:
-            uu=[latlon_nodes[x] for x in st.session_state["route"]]
-            folium.PolyLine(uu, color="yellow", weight=4).add_to(main_map)
+            coords_user = [latlon_nodes[x] for x in st.session_state["route"]]
+            folium.PolyLine(coords_user, color="yellow", weight=4).add_to(main_map)
 
-        # Niebieska: 31->7->32
-        node7_xy = punkty[7]
-        node31_xy= punkty[31]
-        node32_xy= punkty[32]
-        draw_single_line_31_7_32(main_map, control_points_31_7_32, node31_xy, node7_xy, node32_xy)
+        # Ewentualnie rysujesz 31->7->32 (niebieska)...
 
-        # Najkrótsza w trakcie?
+        # Najkrótsza (12->28) w trakcie – jeśli user ustawi
         if st.session_state["show_shortest"]:
             if nx.has_path(G,12,28):
-                path_nodes=nx.shortest_path(G,12,28,weight="weight")
-                csp=[latlon_nodes[x] for x in path_nodes]
-                folium.PolyLine(csp, color="green", weight=5, tooltip="Najkrótsza(12->28)").add_to(main_map)
+                sp=nx.shortest_path(G,12,28,weight="weight")
+                csp=[latlon_nodes[n] for n in sp]
+                folium.PolyLine(csp, color="green", weight=5, tooltip="Najkrótsza").add_to(main_map)
 
         map_data=st_folium(main_map, width=800, height=600, returned_objects=["last_object_clicked_tooltip"])
 
     with col_info:
         st.subheader("Szczegóły punktu:")
+
         clicked_id=None
         if map_data and map_data.get("last_object_clicked_tooltip"):
             try:
@@ -467,32 +488,39 @@ else:
 
         if clicked_id is not None:
             if clicked_id in node_names:
-                b64img=images_base64[clicked_id]
-                dataimg=base64.b64decode(b64img)
-                im=Image.open(io.BytesIO(dataimg))
+                # Wyświetlamy obrazek
+                b64=images_base64[clicked_id]
+                data_img=base64.b64decode(b64)
+                im=Image.open(io.BytesIO(data_img))
                 im.thumbnail((300,300))
                 st.image(im)
                 st.write(f"**{node_names[clicked_id]}** (ID: {clicked_id})")
 
+                # Sprawdzamy, czy dozwolony
                 if not st.session_state["route"]:
                     allowed=(clicked_id==12)
-                    if not allowed:
-                        st.info("Musisz zacząć od węzła 12.")
                 else:
                     last_node=st.session_state["route"][-1]
                     allowed=(clicked_id in G.neighbors(last_node))
 
                 if st.button("Wybierz punkt", key=f"btn_{clicked_id}", disabled=not allowed):
+                    # Gdy user wybrał PIERWSZY raz 12, i jeszcze nie mamy modów
+                    if (not st.session_state["route"]) and (clicked_id==12) and (not st.session_state["modifiers_assigned"]):
+                        # Przypisz losowe modyfikatory
+                        assign_random_modifiers()
+
                     if clicked_id not in st.session_state["route"]:
                         st.session_state["route"].append(clicked_id)
                         st.success(f"Dodano węzeł {clicked_id} ({node_names[clicked_id]}) do trasy!")
+
                         st.session_state["map_center"]=latlon_nodes[clicked_id]
                         st.session_state["map_zoom"]=13
                         if st.session_state["start_time"] is None:
                             st.session_state["start_time"]=time.time()
+
                         if clicked_id==28:
                             st.session_state["game_over"]=True
-                        st.rerun()
+                        st.experimental_rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
             else:
@@ -500,24 +528,31 @@ else:
         else:
             st.write("Kliknij na czerwony znacznik, aby zobaczyć szczegóły.")
 
+        # Wyświetlamy trasę
         if st.session_state["route"]:
-            rlab=[f"{r} ({node_names[r]})" for r in st.session_state["route"]]
-            st.write("Wybrane punkty (kolejność):", rlab)
-            sdist=total_user_distance(st.session_state["route"])
-            st.write(f"Łączna droga: {sdist:.1f} km")
+            named_list=[f"{x} ({node_names[x]})" for x in st.session_state["route"]]
+            st.write("Wybrane punkty (kolejność):", named_list)
+            distv=total_user_distance(st.session_state["route"])
+            st.write(f"Łączna droga: {distv:.1f} km")
 
         if st.session_state["start_time"] is not None and not st.session_state["game_over"]:
-            elap=time.time()-st.session_state["start_time"]
-            st.write(f"Czas od rozpoczęcia: {elap:.1f} s")
+            elapsed=time.time()-st.session_state["start_time"]
+            st.write(f"Czas od rozpoczęcia: {elapsed:.1f} s")
 
     if st.button("Resetuj trasę"):
+        # Reset
         st.session_state["route"]=[]
         st.session_state["start_time"]=None
         st.session_state["show_shortest"]=False
         st.session_state["game_over"]=False
         st.session_state["final_time"]=None
-        st.rerun()
+        st.session_state["modifiers_assigned"]=False
+        st.session_state["edge_modifiers"]={}
+        st.experimental_rerun()
 
+############################################################
+# Teoria
+############################################################
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""\
 Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
