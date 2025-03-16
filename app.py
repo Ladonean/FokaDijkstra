@@ -362,8 +362,6 @@ with col_info:
             if G.has_edge(u, v):
                 dsum += G[u][v]["weight"]
         return dsum
-    user_dist = total_user_distance(st.session_state["route"])
-    st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
 
 ############################
 # Pomiar czasu
