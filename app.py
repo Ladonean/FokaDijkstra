@@ -306,7 +306,7 @@ if st.session_state["game_over"]:
         st.session_state["show_shortest"] = False
         st.session_state["game_over"] = False
         st.session_state["final_time"] = None
-        st.experimental_rerun()
+        st.rerun()
 
     st.stop()  # nie wyświetlaj nic więcej
 
@@ -434,7 +434,7 @@ with col_info:
                     # Sprawdzamy zakończenie
                     if candidate_node == 28:
                         st.session_state["game_over"] = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("Ten węzeł już jest w trasie.")
         else:
@@ -460,7 +460,7 @@ if st.button("Resetuj trasę"):
     st.session_state["show_shortest"] = False
     st.session_state["game_over"] = False
     st.session_state["final_time"] = None
-    st.experimental_rerun()
+    st.rerun()
 
 ############################################
 # Sekcja 4: Teoria (zawsze wyświetlana)
