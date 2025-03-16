@@ -243,7 +243,6 @@ def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
         color="blue",
         weight=4,
         dash_array="5,10",
-        tooltip="31->7->32"
     ).add_to(fmap)
 
     # Szukamy index 7
@@ -266,8 +265,8 @@ def draw_single_line_31_7_32(fmap, points_2180, node_31, node_7, node_32):
         [lat_mid1, lon_mid1],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
-                {dist_31_7/1000:.1f} km (31->7)
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
+                {dist_31_7/1000:.1f}
             </div>
             """
         )
