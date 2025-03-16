@@ -283,7 +283,7 @@ with col_info:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
                         # Odświeżamy stronę, by mapa pokazała żółtą linię
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
                 else:
