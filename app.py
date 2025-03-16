@@ -315,7 +315,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm1, lonm1],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
+            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
                 {dist_31_7/1000:.1f}
             </div>
             """
