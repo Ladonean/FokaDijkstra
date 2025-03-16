@@ -6,3 +6,4 @@ pyproj
 matplotlib
 numpy
 streamlit-autorefresh
+scipy
