@@ -60,9 +60,9 @@ st.write("""\
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 
 ############################
-# Dane węzłów, nazwy, obrazki
+# Dane węzłów, nazwy
 ############################
-# (Przykładowe dane – możesz je rozszerzyć)
+# Uproszczona wersja – tylko kilka punktów, aby łatwiej debugować
 punkty = {
     12: (465439, 724391),
     7: (474358.48, 724280.19),
@@ -72,28 +72,12 @@ punkty = {
 }
 
 node_names = {
-    12: "Lotnisko",
     7: "Gdańsk Wrzeszcz",
+    12: "Lotnisko",
     28: "Punkt Widokowy Sobieszewo Mewia Łacha",
     31: "Gdańsk Oliwa",
     32: "Gdańsk Śródmieście"
 }
-
-def get_image_base64(path):
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-images_base64 = {}
-for n in punkty.keys():
-    fname = f"img{n}.png"
-    if os.path.exists(fname):
-        images_base64[n] = get_image_base64(fname)
-    else:
-        images_base64[n] = get_image_base64("img_placeholder.png")
-
-# Funkcja zwracająca oryginalną odległość (na podstawie współrzędnych)
-def euclidean_distance_km(p1, p2):
-    return round(math.dist(p1, p2) / 1000, 2)
 
 ############################
 # Budujemy graf
@@ -101,15 +85,21 @@ def euclidean_distance_km(p1, p2):
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
-# Dodajemy krawędzie – tutaj dla uproszczenia budujemy graf pełny
+
+# Używamy oryginalnej funkcji obliczania odległości (km)
+def euclidean_distance_km(p1, p2):
+    return round(math.dist(p1, p2) / 1000, 2)
+
+# Dla każdego punktu łączymy go z 3 najbliższymi (dla uproszczenia, u nas graf pełny)
 for num, coord in punkty.items():
     for other, oc2 in punkty.items():
         if other != num:
             dval = euclidean_distance_km(coord, oc2)
+            # Dodajemy krawędź tylko jeśli nie została dodana (graf nieskierowany)
             if not G.has_edge(num, other):
                 G.add_edge(num, other, weight=dval)
 
-# Krawędzie specjalne – (31,7) oraz (7,32) nie podlegają modyfikatorom
+# Krawędzie specjalne – (31,7) oraz (7,32) nie modyfikujemy
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
@@ -120,7 +110,7 @@ for (u, v) in special_edges:
         G.add_edge(u, v, weight=half_w)
 
 ############################
-# Konwersja współrzędnych (EPSG:2180 -> EPSG:4326)
+# Konwersja współrzędnych
 ############################
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
@@ -141,19 +131,15 @@ def total_user_distance(rt):
 if "route" not in st.session_state:
     st.session_state["route"] = []
 if "map_center" not in st.session_state:
-    st.session_state["map_center"] = [54.0, 18.6]  # przykładowe centrum
+    st.session_state["map_center"] = [54.0, 18.6]
 if "map_zoom" not in st.session_state:
     st.session_state["map_zoom"] = 10
 if "start_time" not in st.session_state:
     st.session_state["start_time"] = None
-if "show_shortest" not in st.session_state:
-    st.session_state["show_shortest"] = False
 if "game_over" not in st.session_state:
     st.session_state["game_over"] = False
 if "final_time" not in st.session_state:
     st.session_state["final_time"] = None
-
-# Klucze do modyfikatorów
 if "modifiers_assigned" not in st.session_state:
     st.session_state["modifiers_assigned"] = False
 if "edge_mods" not in st.session_state:
@@ -186,6 +172,7 @@ def assign_modifiers_once():
     if len(all_edges) < 1:
         st.warning("Nie ma wystarczającej liczby krawędzi do losowania modyfikatorów.")
         return
+    # Losujemy 1 lub więcej – tutaj wybieramy wszystkie, ale można zmienić na 6
     chosen = random.sample(all_edges, min(6, len(all_edges)))
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
@@ -205,19 +192,19 @@ def assign_modifiers_once():
     st.write("Aktualne wagi w grafie:", [(u, v, G[u][v]["weight"]) for u, v in G.edges()])
 
 #########################
-# Pobieranie koloru i przeliczonej wagi – pobieramy wartość z grafu G
+# Pobieranie koloru i przeliczonej wagi (z grafu)
 #########################
 def get_edge_color_and_weight(u, v):
     ed = tuple(sorted((u, v)))
     if ed in st.session_state["edge_mods"]:
-        (clr, _) = st.session_state["edge_mods"][ed]
+        (clr, new_w) = st.session_state["edge_mods"][ed]
         return (clr, G[u][v]["weight"])
     return ("gray", G[u][v]["weight"])
 
 ###########################################
 # Niebieska trasa specjalna (31->...->7->...->32)
 ###########################################
-# Ta trasa nie jest modyfikowana – wyświetlamy oryginalne odległości
+# Ta trasa pozostaje bez modyfikatora
 control_points_31_7_32 = [
     (472229.00, 727345.00),
     (472284.89, 726986.93),
@@ -258,7 +245,7 @@ def find_node_index_approx(points_2180, node_xy, label, tolerance=20.0):
         st.warning(f"Nie znaleziono węzła {label}, minimalna odleglosc {best_dist:.2f}m > {tolerance}m.")
         return None
 
-# Rysujemy niebieską trasę specjalną – wyświetlamy oryginalne odległości dla krawędzi (31,7) oraz (7,32)
+# Dla specjalnej niebieskiej trasy wyświetlamy oryginalne odległości
 def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     latlon_list = [to_latlon(p) for p in pts_2180]
     folium.PolyLine(
@@ -352,9 +339,8 @@ if st.session_state["game_over"]:
             icon=DivIcon(
                 html=f"""
                 <div style="text-align:center;">
-                    <div style="background-color:red;color:white;border-radius:50%;
-                                width:24px;height:24px;font-size:12pt;font-weight:bold;
-                                line-height:24px;margin:auto;">{nd}</div>
+                    <div style="background-color:red;color:white;border-radius:50%;width:24px;height:24px;
+                                font-size:12pt;font-weight:bold;line-height:24px;margin:auto;">{nd}</div>
                 </div>
                 """
             )
@@ -375,7 +361,7 @@ if st.session_state["game_over"]:
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
-    # Rysujemy niebieską trasę specjalną (31->7->32) – wyświetlamy oryginalne odległości (bez modyfikatora)
+    # Rysujemy niebieską trasę specjalną (31->7->32)
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
@@ -423,9 +409,8 @@ else:
                 icon=DivIcon(
                     html=f"""
                     <div style="text-align:center;">
-                        <div style="background-color:red;color:white;border-radius:50%;
-                                    width:24px;height:24px;font-size:12pt;font-weight:bold;
-                                    line-height:24px;margin:auto;">{nd}</div>
+                        <div style="background-color:red;color:white;border-radius:50%;width:24px;height:24px;
+                                    font-size:12pt;font-weight:bold;line-height:24px;margin:auto;">{nd}</div>
                     </div>
                     """
                 )
@@ -458,7 +443,7 @@ else:
                 b64 = images_base64[clicked_id]
                 dataim = base64.b64decode(b64)
                 im = Image.open(io.BytesIO(dataim))
-                im.thumbnail((300, 300))
+                im.thumbnail((300,300))
                 st.image(im)
                 st.write(f"**{node_names[clicked_id]}** (ID: {clicked_id})")
                 if not st.session_state["route"]:
