@@ -11,6 +11,7 @@ import os
 from PIL import Image
 import io
 import numpy as np
+from scipy.interpolate import make_interp_spline
 
 ############################
 # Ustawienia strony (Streamlit)
@@ -47,7 +48,7 @@ with st.sidebar:
     )
 
 ############################
-# Sekcje nagłówkowe
+# Nagłówki sekcji
 ############################
 st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
@@ -62,7 +63,7 @@ st.write("""\
 2. Obok mapy (w prawej kolumnie) pojawi się szczegółowy opis i przycisk „Wybierz punkt”.  
 3. Punkty można dodawać do trasy, jeśli łączą się z poprzednim wybranym (graf używa 3 najbliższych sąsiadów).  
 4. Po dodaniu węzła 28 automatycznie pojawi się (na żółto) wybrana trasa oraz (na zielono) najkrótsza możliwa ścieżka.  
-5. Odległości (w km) widoczne są na środku każdej szarej krawędzi; czas liczony jest od momentu wybrania pierwszego punktu.
+5. Odległości (w km) widoczne są na środku każdej krawędzi; czas liczony jest od momentu wybrania pierwszego punktu.
 """)
 
 # Sekcja 3: Wyzwanie
@@ -71,6 +72,7 @@ st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
 ############################
 # Dane węzłów, nazwy oraz obrazy
 ############################
+# (1) Węzły (w systemie EPSG:2180)
 punkty = {
     1: (475268, 723118), 2: (472798, 716990), 3: (478390, 727009),
     4: (476650, 725153), 5: (476622, 721571), 6: (477554, 720574),
@@ -85,6 +87,7 @@ punkty = {
     31: (472229, 727344), 32: (476836, 720475)
 }
 
+# (2) Nazwy węzłów
 node_names = {
     1: "PG",
     2: "Parkrun Gdańsk Południe",
@@ -120,6 +123,7 @@ node_names = {
     32: "Gdańsk Śródmieście"
 }
 
+# (3) Wczytanie i kodowanie obrazka do base64
 def get_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -135,7 +139,7 @@ for n in punkty.keys():
 def euclidean_distance_km(p1, p2):
     return round(math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) / 1000, 1)
 
-# Budowa grafu (każdy węzeł łączy się z 3 najbliższymi sąsiadami)
+# Budowa grafu – każdy węzeł łączy się z 3 najbliższymi sąsiadami
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
@@ -150,7 +154,8 @@ for num, coord in punkty.items():
     for (onum, distv) in nearest:
         G.add_edge(num, onum, weight=distv)
 
-# Dodajemy specjalne krawędzie (np. 7 -> 31 i 7 -> 32) z wagą 0.5
+# Dodajemy specjalne krawędzie (dla przykładu między węzłem 7 a 31 oraz 7 a 32)
+# Waga specjalna zostanie pomnożona przez 0.5 – oznaczamy atrybutem 'special'
 G.add_edge(7, 31, weight=0.5, special=True)
 G.add_edge(7, 32, weight=0.5, special=True)
 
@@ -162,34 +167,46 @@ for n, (x, y) in punkty.items():
     latlon_nodes[n] = (lat, lon)
 
 ############################
-# Funkcja generująca łuk między dwoma punktami
+# Funkcja generująca spline (krzywą) przez podane punkty kontrolne
 ############################
-def generate_arc_points(lat1, lon1, lat2, lon2, steps=20, arc_height_factor=0.2):
-    # Konwersja do radianów
-    lat1_rad, lon1_rad = math.radians(lat1), math.radians(lon1)
-    lat2_rad, lon2_rad = math.radians(lat2), math.radians(lon2)
-    d_lat = lat2_rad - lat1_rad
-    d_lon = lon2_rad - lon1_rad
-    mid_lat = (lat1_rad + lat2_rad) / 2
-    mid_lon = (lon1_rad + lon2_rad) / 2
-    # Wektor prostopadły
-    normal_lat = -d_lon
-    normal_lon = d_lat
-    base_len = math.sqrt(d_lat**2 + d_lon**2)
-    normal_len = math.sqrt(normal_lat**2 + normal_lon**2)
-    if normal_len > 1e-9:
-        normal_lat *= (arc_height_factor * base_len / normal_len)
-        normal_lon *= (arc_height_factor * base_len / normal_len)
-    points = []
-    for i in range(steps + 1):
-        t = i / steps
-        lat_r = lat1_rad + t * d_lat
-        lon_r = lon1_rad + t * d_lon
-        lift = math.sin(math.pi * t)
-        lat_r += lift * normal_lat
-        lon_r += lift * normal_lon
-        points.append((math.degrees(lat_r), math.degrees(lon_r)))
-    return points
+from scipy.interpolate import make_interp_spline
+
+def generate_spline_curve(control_points, num_points=100, spline_k=3):
+    # control_points: list of (lat, lon) pairs
+    control_points = np.array(control_points)
+    t = np.linspace(0, 1, len(control_points))
+    t_new = np.linspace(0, 1, num_points)
+    spline_lat = make_interp_spline(t, control_points[:,0], k=spline_k)
+    spline_lon = make_interp_spline(t, control_points[:,1], k=spline_k)
+    lat_new = spline_lat(t_new)
+    lon_new = spline_lon(t_new)
+    return list(zip(lat_new, lon_new))
+
+# Specjalne punkty kontrolne (w EPSG:2180) – podane z tabeli
+special_control_points = [
+    (476836.13, 720474.95),
+    (476867.00, 720974.20),
+    (476939.43, 721489.61),
+    (476922.72, 721731.99),
+    (476822.42, 722202.83),
+    (476588.40, 722484.22),
+    (476131.49, 723186.29),
+    (475905.82, 723356.24),
+    (475579.86, 723542.90),
+    (474625.15, 724115.93),
+    (474358.48, 724280.19),
+    (473638.71, 724997.54),
+    (473142.45, 725519.92),
+    (472633.14, 726172.89),
+    (472428.54, 726608.20),
+    (472284.89, 726986.93),
+    (472229.03, 727344.24)
+]
+# Konwersja specjalnych punktów kontrolnych do EPSG:4326
+special_control_points_latlon = []
+for (x, y) in special_control_points:
+    lon, lat = transformer.transform(x, y)
+    special_control_points_latlon.append((lat, lon))
 
 ############################
 # Stan sesji
@@ -208,7 +225,7 @@ if "show_shortest" not in st.session_state:
     st.session_state["show_shortest"] = False
 
 ############################
-# Tworzenie layoutu: 2 kolumny (mapa i panel informacyjny)
+# Tworzenie layoutu: 2 kolumny (mapa oraz panel informacyjny)
 ############################
 col_map, col_info = st.columns([2, 1])
 
@@ -218,20 +235,18 @@ with col_map:
 
     # Rysowanie krawędzi
     for u, v, data in G.edges(data=True):
-        # Jeśli krawędź specjalna, rysujemy łuk (niebieski) zamiast prostej linii
         if data.get("special", False):
-            lat1, lon1 = latlon_nodes[u]
-            lat2, lon2 = latlon_nodes[v]
-            arc_pts = generate_arc_points(lat1, lon1, lat2, lon2, steps=30, arc_height_factor=0.2)
-            # Mnożymy odległość przez 0.5 – informacyjnie (możesz dodać tooltip)
+            # Dla specjalnych krawędzi rysujemy spline (krzywą) po kontrolnych punktach
+            arc_pts = generate_spline_curve(special_control_points_latlon, num_points=100, spline_k=3)
+            # Używamy mnożnika 0.5 przy wyświetlaniu odległości (informacyjnie)
+            tooltip_text = f"Specjalna: {u}->{v}, waga={data['weight']} (x0.5)"
             folium.PolyLine(
                 locations=arc_pts,
                 color="blue",
                 weight=3,
-                tooltip=f"Specjalna krawędź {u}->{v}, waga={data['weight']}"
+                tooltip=tooltip_text
             ).add_to(folium_map)
         else:
-            # Zwykłe krawędzie
             lat1, lon1 = latlon_nodes[u]
             lat2, lon2 = latlon_nodes[v]
             distv = data["weight"]
@@ -254,7 +269,7 @@ with col_map:
             )
             folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
 
-    # Rysowanie markerów węzłów (bez popupów, by kliknięcie rejestrowało tooltip)
+    # Rysowanie markerów węzłów – bez popupów, by kliknięcie rejestrowało tooltip
     for node in latlon_nodes:
         latn, lonn = latlon_nodes[node]
         nm = node_names[node]
@@ -277,14 +292,14 @@ with col_map:
         coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
         folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
 
-    # Rysowanie najkrótszej trasy (zielona), jeśli ustawiono show_shortest
+    # Najkrótsza trasa (zielona), jeśli show_shortest ustawione
     if st.session_state["show_shortest"]:
         sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
         coords_sp = [latlon_nodes[x] for x in sp_nodes]
         folium.PolyLine(locations=coords_sp, color="green", weight=5,
                         tooltip="Najkrótsza (12->28)").add_to(folium_map)
 
-    # Wyświetlamy mapę i rejestrujemy kliknięty tooltip
+    # Wyświetlenie mapy
     map_data = st_folium(
         folium_map,
         width=800,
@@ -292,51 +307,49 @@ with col_map:
         returned_objects=["last_object_clicked_tooltip"]
     )
 
-# Aktualizacja map_center i map_zoom po kliknięciu
+# Aktualizacja map_center i map_zoom po kliknięciu na marker (poprzez tooltip)
 if map_data.get("last_object_clicked_tooltip"):
-    # Pobieramy tooltip klikniętego markera
     clicked_name = map_data["last_object_clicked_tooltip"]
 else:
     clicked_name = None
 
 ############################
-# Panel informacyjny (kolumna obok mapy)
+# Panel informacyjny
 ############################
 with col_info:
     st.subheader("Szczegóły punktu:")
     if clicked_name:
-        # Znajdujemy numer węzła na podstawie tooltipu
         candidate_node = None
         for k, v in node_names.items():
             if v == clicked_name:
                 candidate_node = k
                 break
         if candidate_node is not None:
-            # Wyświetlamy obrazek – skalowany do szerokości kontenera
+            # Wyświetlamy obrazek (skalowany do szerokości kontenera)
             b64 = images_base64[candidate_node]
             img_data = base64.b64decode(b64)
             img = Image.open(io.BytesIO(img_data))
-            max_size = (400, 400)  # maksymalna szerokość i wysokość
+            max_size = (400, 400)  # Maksymalny rozmiar (szerokość, wysokość)
             img.thumbnail(max_size)
             st.image(img, use_container_width=True)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
             
-            # Sprawdzamy, czy punkt można dodać (jeśli jest sąsiadem ostatniego punktu w trasie)
+            # Sprawdzamy, czy punkt można dodać do trasy
             last_node = st.session_state["route"][-1] if st.session_state["route"] else None
             allowed = True
             if last_node is not None:
                 if candidate_node not in list(G.neighbors(last_node)):
                     allowed = False
-            
+
             if st.button("Wybierz punkt", key=f"btn_{candidate_node}", disabled=not allowed):
                 if allowed:
                     if candidate_node not in st.session_state["route"]:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
-                        # Aktualizujemy widok mapy: centrowanie i przybliżenie na ostatnim punkcie
+                        # Aktualizacja mapy: centrowanie i przybliżenie na ostatnim punkcie
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
                         st.session_state["map_zoom"] = 13
-                        st.rerun()  # odświeżenie mapy
+                        st.rerun()
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
                 else:
@@ -371,6 +384,7 @@ with col_info:
 ############################
 if st.session_state["route"] and st.session_state["start_time"] is None:
     st.session_state["start_time"] = time.time()
+
 if st.session_state["start_time"] is not None:
     elapsed = time.time() - st.session_state["start_time"]
     st.write(f"Czas od rozpoczęcia trasy: {elapsed:.1f} s")
@@ -385,7 +399,7 @@ if st.button("Resetuj trasę"):
     st.rerun()
 
 ############################
-# Wyświetlenie najkrótszej trasy (zielona) po dotarciu do węzła 28
+# Najkrótsza trasa (zielona) – wyświetlana po dotarciu do węzła 28
 ############################
 if 28 in st.session_state["route"]:
     st.session_state["show_shortest"] = True
