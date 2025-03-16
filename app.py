@@ -315,8 +315,8 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm1, lonm1],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
-                {dist_31_7/1000:.1f}
+            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
+                {dist_31_7/1000:.1f} km
             </div>
             """
         )
@@ -327,8 +327,8 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
         [latm2, lonm2],
         icon=DivIcon(
             html=f"""
-            <div style="font-size:14px;font-weight:bold;color:blue;padding:3px;border-radius:5px;">
-                {dist_7_32/1000:.1f}
+            <div style="font-size:14px;font-weight:bold;color:blue;background-color:white;padding:3px;border-radius:5px;">
+                {dist_7_32/1000:.1f} km
             </div>
             """
         )
@@ -371,7 +371,7 @@ if st.session_state["game_over"]:
     st.markdown("#### Finalna mapa:")
     final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    # Rysujemy krawędzie z modyfikatorami
+    # Rysujemy krawędzie z modyfikatorami (ich nowe wagi i kolory)
     for u, v, data in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
             continue
@@ -391,7 +391,7 @@ if st.session_state["game_over"]:
             icon=DivIcon(
                 html=f"""
                 <div style="font-size:14px;font-weight:bold;color:{color};">
-                    {distv}
+                    {distv} km
                 </div>
                 """
             )
@@ -432,7 +432,7 @@ if st.session_state["game_over"]:
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
 
-    # Rysujemy niebieską trasę 31->7->32
+    # Rysujemy niebieską trasę 31->7->32 (ta nie jest modyfikowana – wyświetlamy oryginalne odległości)
     node7_xy = punkty[7]
     node31_xy = punkty[31]
     node32_xy = punkty[32]
@@ -474,7 +474,7 @@ else:
                 icon=DivIcon(
                     html=f"""
                     <div style="font-size:14px;font-weight:bold;color:{color};">
-                        {distv}
+                        {distv} km
                     </div>
                     """
                 )
