@@ -131,7 +131,6 @@ def euclidean_distance_km(p1, p2):
 ################################
 # Budujemy graf
 ################################
-import networkx as nx
 G = nx.Graph()
 for num, coord in punkty.items():
     G.add_node(num, pos=coord)
@@ -153,6 +152,18 @@ for (u, v) in special_edges:
         G[u][v]["weight"] = min(G[u][v]["weight"], half_w)
     else:
         G.add_edge(u, v, weight=half_w)
+
+# Po ponownym zbudowaniu grafu sprawdzamy, czy modyfikatory już są przypisane
+# Jeśli tak, przeliczamy wagi krawędzi na podstawie oryginalnych wartości
+if st.session_state.get("modifiers_assigned", False):
+    for ed, (color, mult) in st.session_state["edge_mods"].items():
+        u, v = ed
+        original_weight = euclidean_distance_km(punkty[u], punkty[v])
+        new_weight = round(original_weight * mult, 2)
+        if G.has_edge(u, v):
+            G[u][v]["weight"] = new_weight
+        if G.has_edge(v, u):
+            G[v][u]["weight"] = new_weight
 
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
