@@ -52,16 +52,16 @@ st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
 
 # Sekcja 1: Start
 st.markdown('<h2 id="start">Start</h2>', unsafe_allow_html=True)
-st.write("Witamy w aplikacji! Aby rozpocząć, wybierz punkt **12** jako punkt startowy.")
+st.write("Witamy w aplikacji! Aby rozpocząć, kliknij na punkt **12** (start).")
 
 # Sekcja 2: Samouczek
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij **bezpośrednio na marker** (czerwone kółko z numerem), by go wybrać.  
-2. Obok mapy pojawi się panel ze szczegółami i przyciskiem „Wybierz punkt”.  
-3. Punkty można dodawać do trasy, jeśli łączą się z poprzednim wybranym (graf oparty na 3 najbliższych sąsiadach).  
-4. Po dodaniu punktu 28, gra kończy się – wyświetlone zostanie finalne podsumowanie: trasa (numery i nazwy), czas oraz łączna droga, a interakcja z mapą zostanie zablokowana.  
-5. Odległości (w km) są widoczne na środku każdej szarej krawędzi.
+2. Obok mapy (w prawej kolumnie) pojawi się panel ze szczegółami oraz przycisk „Wybierz punkt”.  
+3. Możesz dodawać punkty do trasy, ale początkowo musisz wybrać punkt 12 jako start.  
+4. Gdy dodasz punkt 28 (meta), gra się kończy – wyświetlona zostanie finalna mapa z Twoją trasą, najkrótszą trasą, czasem i łączną odległością, a dalsze kliknięcia będą zablokowane.  
+5. Odległości (w km) widoczne są na środku każdej szarej krawędzi.
 """)
 
 # Sekcja 3: Wyzwanie
@@ -172,9 +172,9 @@ for n, (x, y) in punkty.items():
 ############################
 # Inicjalizacja stanu sesji
 ############################
-# Użytkownik musi wybrać punkt 12 jako start; po resecie też startujemy od 12
-if "route" not in st.session_state or not st.session_state["route"]:
-    st.session_state["route"] = [12]
+# Początkowo trasa jest pusta – użytkownik musi kliknąć punkt 12 jako start
+if "route" not in st.session_state:
+    st.session_state["route"] = []
 if "map_center" not in st.session_state:
     center_lat = sum(v[0] for v in latlon_nodes.values()) / len(latlon_nodes)
     center_lon = sum(v[1] for v in latlon_nodes.values()) / len(latlon_nodes)
@@ -230,112 +230,96 @@ control_distance_text = f"{control_distance:.1f} km"
 ############################
 col_map, col_info = st.columns([2, 1])
 
-with col_map:
-    folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
-    
-    # Rysowanie krawędzi (pomijamy specjalne)
-    for u, v, data in G.edges(data=True):
-        if (u, v) in special_edges or (v, u) in special_edges:
-            continue
-        lat1, lon1 = latlon_nodes[u]
-        lat2, lon2 = latlon_nodes[v]
-        distv = data["weight"]
-        line = folium.PolyLine(
-            locations=[[lat1, lon1], [lat2, lon2]],
-            color="gray",
-            weight=2,
-            tooltip=f"{distv} km"
-        )
-        line.add_to(folium_map)
-        mid_lat = (lat1 + lat2) / 2
-        mid_lon = (lon1 + lon2) / 2
-        dist_icon = DivIcon(
-            html=f"""
-            <div style="font-size:14px;font-weight:bold;color:black;">
-                {distv}
-            </div>
-            """
-        )
-        folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
-    
-    # Rysowanie markerów (tylko tooltipy – kliknięcie rejestruje nazwę)
-    for node in latlon_nodes:
-        latn, lonn = latlon_nodes[node]
-        nm = node_names[node]
-        folium.Marker(
-            location=[latn, lonn],
-            tooltip=nm,
-            icon=DivIcon(html=f"""
-            <div style="text-align:center;">
-                <div style="background-color:red;color:white;border-radius:50%;
-                            width:24px;height:24px;font-size:12pt;font-weight:bold;
-                            line-height:24px;margin:auto;">
-                {node}
+# W trybie interaktywnym (game_over == False) użytkownik może wybierać punkty
+if not st.session_state["game_over"]:
+    with col_map:
+        folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
+        
+        # Rysowanie krawędzi (pomijamy specjalne)
+        for u, v, data in G.edges(data=True):
+            if (u, v) in special_edges or (v, u) in special_edges:
+                continue
+            lat1, lon1 = latlon_nodes[u]
+            lat2, lon2 = latlon_nodes[v]
+            distv = data["weight"]
+            line = folium.PolyLine(
+                locations=[[lat1, lon1], [lat2, lon2]],
+                color="gray",
+                weight=2,
+                tooltip=f"{distv} km"
+            )
+            line.add_to(folium_map)
+            mid_lat = (lat1 + lat2) / 2
+            mid_lon = (lon1 + lon2) / 2
+            dist_icon = DivIcon(
+                html=f"""
+                <div style="font-size:14px;font-weight:bold;color:black;">
+                    {distv}
                 </div>
-            </div>
-            """)
-        ).add_to(folium_map)
-    
-    # Rysowanie trasy użytkownika (żółta)
-    if st.session_state["route"]:
-        coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
-        folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
-    
-    # Rysowanie przyspieszonej trasy przez punkty kontrolne (niebieska, przerywana)
-    folium.PolyLine(
-        locations=control_points_latlon,
-        color="blue",
-        weight=4,
-        dash_array="5,10",
-        tooltip=f"Przyspieszona trasa: {control_distance_text}"
-    ).add_to(folium_map)
-    
-    # Rysowanie najkrótszej trasy (zielona) – jeśli gra zakończona
-    if st.session_state["show_shortest"]:
-        sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
-        coords_sp = [latlon_nodes[x] for x in sp_nodes]
+                """
+            )
+            folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
+        
+        # Rysowanie markerów – używamy tooltipów
+        for node in latlon_nodes:
+            latn, lonn = latlon_nodes[node]
+            nm = node_names[node]
+            folium.Marker(
+                location=[latn, lonn],
+                tooltip=nm,
+                icon=DivIcon(html=f"""
+                <div style="text-align:center;">
+                    <div style="background-color:red;color:white;border-radius:50%;
+                                width:24px;height:24px;font-size:12pt;font-weight:bold;
+                                line-height:24px;margin:auto;">
+                    {node}
+                    </div>
+                </div>
+                """)
+            ).add_to(folium_map)
+        
+        # Rysowanie trasy użytkownika (żółta)
+        if st.session_state["route"]:
+            coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
+            folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
+        
+        # Rysowanie przyspieszonej trasy przez punkty kontrolne (niebieska, przerywana)
         folium.PolyLine(
-            locations=coords_sp,
-            color="green",
-            weight=5,
-            tooltip="Najkrótsza (12->28)"
+            locations=control_points_latlon,
+            color="blue",
+            weight=4,
+            dash_array="5,10",
+            tooltip=f"Przyspieszona trasa: {control_distance_text}"
         ).add_to(folium_map)
+        
+        # Najkrótsza trasa (zielona) – jeśli użytkownik wybrał punkt 28 (meta)
+        if st.session_state["show_shortest"]:
+            sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
+            coords_sp = [latlon_nodes[x] for x in sp_nodes]
+            folium.PolyLine(
+                locations=coords_sp,
+                color="green",
+                weight=5,
+                tooltip="Najkrótsza (12->28)"
+            ).add_to(folium_map)
+        
+        map_data = st_folium(
+            folium_map,
+            width=800,
+            height=600,
+            returned_objects=["last_object_clicked_tooltip"]
+        )
     
-    map_data = st_folium(
-        folium_map,
-        width=800,
-        height=600,
-        returned_objects=["last_object_clicked_tooltip"]
-    )
-
-with col_info:
-    st.subheader("Szczegóły punktu:")
-    
-    # Jeśli gra zakończona (punkt 28 osiągnięty), wyświetlamy finalne podsumowanie
-    if 28 in st.session_state["route"]:
-        final_time = time.time() - st.session_state["start_time"]
-        def total_user_distance(route):
-            dsum = 0.0
-            for i in range(len(route)-1):
-                u = route[i]
-                v = route[i+1]
-                if G.has_edge(u, v):
-                    dsum += G[u][v]["weight"]
-            return dsum
-        final_distance = total_user_distance(st.session_state["route"])
-        # Finalna trasa z numerami i nazwami
-        final_route = [f"{n} ({node_names[n]})" for n in st.session_state["route"]]
-        st.markdown("### Finalna trasa")
-        st.write("Trasa:", final_route)
-        st.write("Czas:", f"{final_time:.1f} s")
-        st.write("Łączna droga:", f"{final_distance:.1f} km")
-        # Ustawiamy flagę game_over, aby zablokować dalsze interakcje
-        st.session_state["game_over"] = True
-    else:
-        # Jeśli gra nie zakończona, umożliwiamy wybór punktu
+    with col_info:
+        st.subheader("Szczegóły punktu:")
         clicked_name = None
         if map_data and map_data.get("last_object_clicked_tooltip"):
             clicked_name = map_data["last_object_clicked_tooltip"]
+        
+        # Jeśli jeszcze nie wybrano żadnego punktu, komunikat:
+        if not st.session_state["route"]:
+            st.write("Rozpocznij od kliknięcia na punkt **12**.")
+        
         if clicked_name:
             candidate_node = None
             for k, v in node_names.items():
@@ -343,7 +327,7 @@ with col_info:
                     candidate_node = k
                     break
             if candidate_node is not None:
-                # Wyświetlamy obrazek (bez use_container_width, skalowany do maks. 300x300)
+                # Wyświetlamy obrazek (st.image(img) bez use_container_width)
                 b64 = images_base64[candidate_node]
                 img_data = base64.b64decode(b64)
                 img = Image.open(io.BytesIO(img_data))
@@ -352,23 +336,25 @@ with col_info:
                 st.image(img)
                 st.write(f"**{clicked_name}** (ID: {candidate_node})")
                 
-                # Sprawdzamy, czy punkt można dodać do trasy
+                # Sprawdzamy, czy punkt można dodać:
+                # Jeśli trasa jest pusta, jedynie punkt 12 jest dozwolony
                 if not st.session_state["route"]:
-                    allowed = (candidate_node == 12)  # na start dopuszczamy tylko punkt 12
+                    allowed = (candidate_node == 12)
                     if not allowed:
-                        st.write("Aby rozpocząć, wybierz punkt 12 jako startowy.")
+                        st.write("Aby rozpocząć, wybierz punkt **12** jako startowy.")
                 else:
                     last_node = st.session_state["route"][-1]
                     allowed = candidate_node in list(G.neighbors(last_node))
+                
                 if st.button("Wybierz punkt", key=f"btn_{candidate_node}", disabled=not allowed):
                     if allowed:
                         if candidate_node not in st.session_state["route"]:
                             st.session_state["route"].append(candidate_node)
                             st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
-                            # Aktualizujemy mapę: wycentruj i przybliż na wybranym punkcie
+                            # Aktualizacja mapy: wycentruj i przybliż na wybranym punkcie
                             st.session_state["map_center"] = latlon_nodes[candidate_node]
                             st.session_state["map_zoom"] = 13
-                            # Nie resetujemy czasu, jeśli już został ustawiony
+                            # Ustaw czas tylko przy pierwszym wyborze
                             if st.session_state["start_time"] is None:
                                 st.session_state["start_time"] = time.time()
                             st.rerun()
@@ -380,13 +366,13 @@ with col_info:
                 st.write("Nie znaleziono punktu o tej nazwie.")
         else:
             st.write("Kliknij na marker, aby zobaczyć szczegóły.")
-    
+        
         if st.session_state["route"]:
             named_route = [f"{n} ({node_names[n]})" for n in st.session_state["route"]]
             st.write("Wybrane punkty użytkownika (kolejność):", named_route)
         else:
             st.write("Brak wybranych punktów.")
-    
+        
         def total_user_distance(route):
             dsum = 0.0
             for i in range(len(route)-1):
@@ -397,41 +383,49 @@ with col_info:
             return dsum
         user_dist = total_user_distance(st.session_state["route"])
         st.write(f"Łączna droga użytkownika: {user_dist:.1f} km")
+        
+        # Pomiar czasu – wyświetlamy tylko gdy gra trwa
+        if st.session_state["start_time"] is not None and not st.session_state["game_over"]:
+            elapsed = time.time() - st.session_state["start_time"]
+            st.write(f"Czas od rozpoczęcia trasy: {elapsed:.1f} s")
+        
+        if st.button("Resetuj trasę"):
+            st.session_state["route"] = []
+            st.session_state["start_time"] = None
+            st.session_state["show_shortest"] = False
+            st.session_state["game_over"] = False
+            st.rerun()
     
-    # Pomiar czasu – ustawiamy raz, gdy pierwszy punkt zostanie wybrany
-    if st.session_state["route"] and st.session_state["start_time"] is None:
-        st.session_state["start_time"] = time.time()
-    if st.session_state["start_time"] is not None:
-        elapsed = time.time() - st.session_state["start_time"]
-        st.write(f"Czas od rozpoczęcia trasy: {elapsed:.1f} s")
-    
-    if st.button("Resetuj trasę"):
-        st.session_state["route"] = [12]  # po resecie startujemy od punktu 12
-        st.session_state["start_time"] = None
-        st.session_state["show_shortest"] = False
-        st.session_state["game_over"] = False
-        st.rerun()
+    # Jeśli gra zakończona – czyli punkt 28 został dodany – to blokujemy dalszą interakcję
+    if 28 in st.session_state["route"]:
+        st.session_state["game_over"] = True
 
-############################
-# Finalna trasa (najkrótsza) – po osiągnięciu punktu 28, finalne podsumowanie
-############################
-if 28 in st.session_state["route"]:
-    st.session_state["show_shortest"] = True
+# Finalny widok – gdy gra zakończona (game_over == True)
+if st.session_state["game_over"]:
+    st.markdown("### Finalna trasa")
+    final_time = time.time() - st.session_state["start_time"]
+    def total_user_distance(route):
+        dsum = 0.0
+        for i in range(len(route)-1):
+            u = route[i]
+            v = route[i+1]
+            if G.has_edge(u, v):
+                dsum += G[u][v]["weight"]
+        return dsum
+    final_distance = total_user_distance(st.session_state["route"])
+    final_route = [f"{n} ({node_names[n]})" for n in st.session_state["route"]]
+    st.write("Twoja trasa:", final_route)
+    st.write("Czas:", f"{final_time:.1f} s")
+    st.write("Łączna droga:", f"{final_distance:.1f} km")
     if nx.has_path(G, 12, 28):
         shortest_nodes = nx.shortest_path(G, 12, 28, weight='weight')
         shortest_len = nx.shortest_path_length(G, 12, 28, weight='weight')
-        # Wyświetlamy finalną trasę z numerami i nazwami
-        final_route = [f"{n} ({node_names[n]})" for n in st.session_state["route"]]
-        st.markdown("### Finalne podsumowanie")
-        st.write("Twoja trasa:", final_route)
-        st.write("Czas:", f"{elapsed:.1f} s")
-        st.write("Łączna droga:", f"{user_dist:.1f} km")
-        st.write("Najkrótsza możliwa trasa (12 -> 28):", [f"{n} ({node_names[n]})" for n in shortest_nodes])
+        final_shortest = [f"{n} ({node_names[n]})" for n in shortest_nodes]
+        st.write("Najkrótsza możliwa trasa (12 -> 28):", final_shortest)
         st.write(f"Długość najkrótszej trasy: {shortest_len:.1f} km")
-        st.success("Gratulacje, dotarłeś do węzła 28!")
     else:
         st.write("Brak ścieżki pomiędzy 12 a 28.")
-
+        
 ############################
 # Sekcja 4: Teoria
 ############################
