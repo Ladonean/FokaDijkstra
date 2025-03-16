@@ -236,8 +236,8 @@ with col_map:
     # Wyświetlenie mapy i zwrócenie obiektu klikniętego (tooltip)
     map_data = st_folium(
         folium_map,
-        width=700,
-        height=500,
+        width=800,
+        height=600,
         returned_objects=["last_object_clicked_tooltip"]
     )
 
@@ -269,7 +269,7 @@ with col_info:
             img = Image.open(io.BytesIO(img_data))
             
             # Ustawiamy maksymalny rozmiar (np. 300 pikseli szerokości)
-            max_size = (300, 300)  # zachowując proporcje
+            max_size = (400, 400)  # zachowując proporcje
             img.thumbnail(max_size)
             st.image(img)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
@@ -289,7 +289,7 @@ with col_info:
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
                         # Aktualizacja mapy: wycentruj i przybliż na ostatnim punkcie
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
-                        st.session_state["map_zoom"] = 15
+                        st.session_state["map_zoom"] = 13
                         st.rerun()  # odświeżenie mapy (całego kontenera)
                     else:
                         st.warning("Ten węzeł już jest w trasie.")
