@@ -9,6 +9,7 @@ import networkx as nx
 from folium import DivIcon, IFrame, Popup
 import os
 
+
 ############################
 # Ustawienia strony (Streamlit)
 ############################
@@ -262,7 +263,7 @@ with col_info:
         if candidate_node is not None:
             # Wyświetlamy obrazek – skalowany do szerokości kontenera
             b64 = images_base64[candidate_node]
-            st.image(f"data:image/png;base64,{b64}", use_container_width=True)
+            st.image(f"data:image/png;base64,{b64}", width=300, heigth=300)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
             # Sprawdzamy, czy punkt można dodać (jeśli jest sąsiadem ostatniego węzła)
