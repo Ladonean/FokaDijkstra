@@ -118,7 +118,7 @@ node_names = {
     29: "Marina Przełom",
     30: "Prom Świbno",
     31: "Gdańsk Oliwa",
-    32: "Gdańsk Śródmieście",
+    32: "Gdańsk Śródmieście"
 }
 
 # (3) Funkcja do wczytania i zakodowania obrazka w base64
@@ -152,52 +152,23 @@ for num, coord in punkty.items():
     for (onum, distv) in nearest:
         G.add_edge(num, onum, weight=distv)
 
+# Dodajemy dodatkowe (specjalne) krawędzie między 31 a 7 oraz 7 a 32
+# Te krawędzie są "przyspieszone": waga = EuclideanDistance * 0.5
+special_edges = [(31, 7), (7, 32)]
+for u, v in special_edges:
+    special_weight = euclidean_distance_km(punkty[u], punkty[v]) * 0.5
+    # Dodajemy krawędź (jeśli już istnieje, uaktualniamy wagę do mniejszej)
+    if G.has_edge(u, v):
+        G[u][v]["weight"] = min(G[u][v]["weight"], special_weight)
+    else:
+        G.add_edge(u, v, weight=special_weight)
+
 # Konwersja EPSG:2180 -> EPSG:4326
 transformer = Transformer.from_crs("EPSG:2180", "EPSG:4326", always_xy=True)
 latlon_nodes = {}
 for n, (x, y) in punkty.items():
     lon, lat = transformer.transform(x, y)
     latlon_nodes[n] = (lat, lon)
-
-############################
-# Dodatkowa trasa "przyspieszona" przez punkty kontrolne
-############################
-control_points = [
-    (476836.13, 720474.95),
-    (476867.00, 720974.20),
-    (476939.43, 721489.61),
-    (476922.72, 721731.99),
-    (476822.42, 722202.83),
-    (476588.40, 722484.22),
-    (476131.49, 723186.29),
-    (475905.82, 723356.24),
-    (475579.86, 723542.90),
-    (474625.15, 724115.93),
-    (474358.48, 724280.19),
-    (473638.71, 724997.54),
-    (473142.45, 725519.92),
-    (472633.14, 726172.89),
-    (472428.54, 726608.20),
-    (472284.89, 726986.93),
-    (472229.03, 727344.24)
-]
-
-control_points_latlon = []
-for pt in control_points:
-    lon, lat = transformer.transform(pt[0], pt[1])
-    control_points_latlon.append((lat, lon))
-
-def compute_control_distance(points):
-    total = 0.0
-    for i in range(len(points)-1):
-        dx = points[i+1][0] - points[i][0]
-        dy = points[i+1][1] - points[i][1]
-        d = math.sqrt(dx**2 + dy**2) / 1000
-        total += d
-    return total * 0.5
-
-control_distance = compute_control_distance(control_points)
-control_distance_text = f"{control_distance:.1f} km"
 
 ############################
 # Stan sesji
@@ -216,15 +187,19 @@ if "show_shortest" not in st.session_state:
     st.session_state["show_shortest"] = False
 
 ############################
-# Layout: 2 kolumny: mapa i panel informacyjny
+# Layout: 2 kolumny: mapa (col_map) i panel informacyjny (col_info)
 ############################
 col_map, col_info = st.columns([2, 1])
 
 with col_map:
+    # Rysowanie mapy Folium
     folium_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
 
-    # Krawędzie (szare) z etykietami
+    # Rysowanie krawędzi (szare) wraz z etykietami
     for u, v, data in G.edges(data=True):
+        # Ukrywamy specjalne krawędzie (31-7, 7-32) z mapy, ale pozostają w grafie
+        if (u, v) in special_edges or (v, u) in special_edges:
+            continue
         lat1, lon1 = latlon_nodes[u]
         lat2, lon2 = latlon_nodes[v]
         distv = data["weight"]
@@ -246,7 +221,7 @@ with col_map:
         )
         folium.Marker([mid_lat, mid_lon], icon=dist_icon).add_to(folium_map)
 
-    # Markery węzłów
+    # Rysowanie markerów (bez popupów – używamy tooltipów)
     for node in latlon_nodes:
         latn, lonn = latlon_nodes[node]
         nm = node_names[node]
@@ -264,12 +239,12 @@ with col_map:
             """)
         ).add_to(folium_map)
 
-    # Trasa użytkownika (żółta)
+    # Rysowanie trasy użytkownika (żółta)
     if st.session_state["route"]:
         coords_route = [latlon_nodes[n] for n in st.session_state["route"]]
         folium.PolyLine(locations=coords_route, color="yellow", weight=4).add_to(folium_map)
 
-    # Trasa przyspieszona (niebieska, przerywana) przez punkty kontrolne
+    # Rysowanie przyspieszonej trasy przez punkty kontrolne (niebieska, przerywana)
     folium.PolyLine(
         locations=control_points_latlon,
         color="blue",
@@ -278,7 +253,7 @@ with col_map:
         tooltip=f"Przyspieszona trasa: {control_distance_text}"
     ).add_to(folium_map)
 
-    # Najkrótsza trasa (zielona) – jeśli show_shortest jest True
+    # Rysowanie najkrótszej trasy (zielona) – jeśli show_shortest
     if st.session_state["show_shortest"]:
         sp_nodes = nx.shortest_path(G, 12, 28, weight="weight")
         coords_sp = [latlon_nodes[x] for x in sp_nodes]
@@ -289,6 +264,7 @@ with col_map:
             tooltip="Najkrótsza (12->28)"
         ).add_to(folium_map)
 
+    # Wyświetlenie mapy z rejestracją klikniętego obiektu (tooltip)
     map_data = st_folium(
         folium_map,
         width=800,
@@ -310,14 +286,16 @@ with col_info:
                 break
 
         if candidate_node is not None:
+            # Wyświetlamy obrazek – skalowany do maksymalnie 300x300 pikseli
             b64 = images_base64[candidate_node]
             img_data = base64.b64decode(b64)
             img = Image.open(io.BytesIO(img_data))
             max_size = (300, 300)
             img.thumbnail(max_size)
-            st.image(img, use_container_width=True)
+            st.image(img)
             st.write(f"**{clicked_name}** (ID: {candidate_node})")
 
+            # Sprawdzamy, czy punkt można dodać do trasy (musi być sąsiadem ostatniego wybranego)
             last_node = st.session_state["route"][-1] if st.session_state["route"] else None
             allowed = True
             if last_node is not None:
@@ -329,6 +307,7 @@ with col_info:
                     if candidate_node not in st.session_state["route"]:
                         st.session_state["route"].append(candidate_node)
                         st.success(f"Dodano węzeł {candidate_node} ({clicked_name}) do trasy!")
+                        # Aktualizujemy mapę: wycentruj i przybliż na wybranym punkcie
                         st.session_state["map_center"] = latlon_nodes[candidate_node]
                         st.session_state["map_zoom"] = 13
                         st.rerun()
