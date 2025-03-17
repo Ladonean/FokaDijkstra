@@ -228,10 +228,10 @@ def assign_modifiers_once():
         edge_key = tuple(sorted((u, v)))
         all_edges.append(edge_key)
     all_edges = list(set(all_edges))
-    if len(all_edges) < 10:
+    if len(all_edges) < 6:
         st.warning("Nie ma wystarczającej liczby krawędzi do wylosowania 6! Pomijam modyfikatory.")
         return
-    chosen_6 = random.sample(all_edges, 10)
+    chosen_6 = random.sample(all_edges, 6)
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
     for i, ed in enumerate(chosen_6):
