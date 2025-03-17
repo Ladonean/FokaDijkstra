@@ -220,7 +220,7 @@ COLOR_MAP = {
 #########################
 # Losowanie 6 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
 #########################
-dedef assign_modifiers_once():
+def assign_modifiers_once():
     all_edges = []
     for (u, v, data) in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
