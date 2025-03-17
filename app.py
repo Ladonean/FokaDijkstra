@@ -231,7 +231,7 @@ def assign_modifiers_once():
     if len(all_edges) < 10:
         st.warning("Nie ma wystarczającej liczby krawędzi do wylosowania 6! Pomijam modyfikatory.")
         return
-    chosen_6 = random.sample(all_edges, 6)
+    chosen_6 = random.sample(all_edges, 10)
     shuffled = EDGE_MULTIPLIERS[:]
     random.shuffle(shuffled)
     for i, ed in enumerate(chosen_6):
