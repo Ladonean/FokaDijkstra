@@ -220,7 +220,7 @@ COLOR_MAP = {
 #########################
 # Losowanie 6 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
 #########################
-def assign_modifiers_once():
+dedef assign_modifiers_once():
     all_edges = []
     for (u, v, data) in G.edges(data=True):
         if (u, v) in special_edges or (v, u) in special_edges:
@@ -228,14 +228,16 @@ def assign_modifiers_once():
         edge_key = tuple(sorted((u, v)))
         all_edges.append(edge_key)
     all_edges = list(set(all_edges))
-    if len(all_edges) < 6:
-        st.warning("Nie ma wystarczającej liczby krawędzi do wylosowania 6! Pomijam modyfikatory.")
+    required_count = 12
+    if len(all_edges) < required_count:
+        st.warning(f"Nie ma wystarczającej liczby krawędzi do wylosowania {required_count}! Pomijam modyfikatory.")
         return
-    chosen_6 = random.sample(all_edges, 6)
-    shuffled = EDGE_MULTIPLIERS[:]
-    random.shuffle(shuffled)
-    for i, ed in enumerate(chosen_6):
-        mult = shuffled[i]
+    chosen_edges = random.sample(all_edges, required_count)
+    # Każdy modyfikator z EDGE_MULTIPLIERS wystąpi dokładnie 2 razy
+    modifiers = EDGE_MULTIPLIERS * 2  
+    random.shuffle(modifiers)
+    for i, ed in enumerate(chosen_edges):
+        mult = modifiers[i]
         color = COLOR_MAP[mult]
         (a, b) = ed
         oldw = G[a][b]["weight"]
@@ -246,7 +248,6 @@ def assign_modifiers_once():
         st.session_state["edge_mods"][ed] = (color, mult)
     st.session_state["modifiers_assigned"] = True
     st.write("Przypisane modyfikatory:", st.session_state["edge_mods"])
-
 #########################
 # Rysowanie krawędzi – dla wyświetlania chcemy pokazać przeliczoną wartość
 #########################
