@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:20px;font-weight:bold;color:black;">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {tooltip_text}
                 </div>
                 """
@@ -489,7 +489,7 @@ else:
                 [mlat, mlon],
                 icon=DivIcon(
                     html=f"""
-                    <div style="font-size:20px;font-weight:bold;color:black;">
+                    <div style="font-size:16px;font-weight:bold;color:black;">
                         {tooltip_text}
                     </div>
                     """
