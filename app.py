@@ -11,6 +11,7 @@ import networkx as nx
 from folium import DivIcon
 from pyproj import Transformer
 import random  # DO LOSOWANIA
+import csv
 
 ############################
 # Ustawienia strony
@@ -52,16 +53,21 @@ st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij **bezpośrednio na marker** (czerwone kółko z numerem), aby go wybrać.  
 2. Obok mapy (w prawej kolumnie) pojawi się panel z obrazkiem, nazwą i przyciskiem „Wybierz punkt”.  
-3. Na początku dozwolony jest tylko punkt **12**. Po jego wybraniu losowo przypisywane są modyfikatory do wybranych krawędzi – mnożniki te zmieniają odległości dróg. Przykładowo, krawędź z mnożnikiem **1.4** staje się 1.4 razy dłuższa, a krawędź z mnożnikiem **0.6** jest skrócona.  
+3. Na początku dozwolony jest tylko punkt **12**. Po jego wybraniu losowo przypisywane są modyfikatory do wybranych krawędzi – mnożniki te zmieniają odległości dróg. Przykładowo, krawędź z mnożnikiem **1.4** staje się 1.4 razy dłuższa, a krawędź z mnożnikiem **0.6** – skrócona.  
    - Kolory modyfikatorów odpowiadają następującym wartościom:  
      - **1.2**: pomarańczowy  
      - **1.4**: czerwony  
      - **1.6**: brązowy/bordowy  
-     - **0.8**: niebieski  
-     - **0.6**: zielony (odcień jaśniejszy niż zielony trasy najszybszej)  
-     - **0.4**: różowy (średni odcień)  
+     - **0.8**: lightblue  
+     - **0.6**: palegreen  
+     - **0.4**: pink  
 4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto.  
-5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.
+5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.  
+   
+   **System oceny:**  
+   Twoja ocena obliczana jest według wzoru:  
+   &nbsp;&nbsp;&nbsp;&nbsp;**Ocena = 100 · (najkrótsza_trasa / Twoja_trasa) · (30 / czas)**  
+   Przy założeniu czasu bazowego 30 s, gdy Twoja trasa jest najkrótsza, uzyskujesz 100 punktów. Im dłuższa trasa lub większy czas, tym niższa ocena.
 """)
 
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
@@ -375,10 +381,7 @@ if st.session_state["game_over"]:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
         if user_dist > 0 and final_time > 0:
-            # Przykładowy system punktacji:
-            # Jeśli trasa użytkownika jest równa najkrótszej, a czas równy bazowemu (60s) → 100 punktów.
-            # Dłuższa trasa i/lub dłuższy czas skutkuje niższą oceną.
-            baseline_time = 100.0  # przyjęty czas bazowy
+            baseline_time = 60.0  # przyjęty czas bazowy
             score = 100 * (shortest_dist / user_dist) * (baseline_time / final_time)
             st.write(f"Ocena: {score} punktów")
     with rightC:
@@ -606,3 +609,48 @@ if st.button("Pokaż animację algorytmu Dijkstry"):
         st.image("dijkstra_steps.gif", caption="Przykładowy przebieg algorytmu Dijkstry.")
     else:
         st.warning("Brak pliku dijkstra_steps.gif w katalogu.")
+
+#######################
+# Sekcja Ranking
+#######################
+st.markdown("### Ranking")
+ranking_file = "ranking.csv"
+# Utwórz plik rankingowy, jeśli nie istnieje
+if not os.path.exists(ranking_file):
+    with open(ranking_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Email", "Punkty", "Czas", "Trasa"])
+
+# Jeśli gra się zakończyła i użytkownik nie dodał jeszcze wyniku, pozwól na podanie e-maila
+if st.session_state.get("game_over", False) and not st.session_state.get("ranking_submitted", False):
+    user_email = st.text_input("Podaj swój e-mail, aby dodać swój wynik do rankingu:")
+    if user_email:
+        if "@" in user_email and user_email.endswith((".com", ".pl", ".net", ".org", ".edu")):
+            if st.button("Dodaj do rankingu"):
+                with open(ranking_file, "a", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([user_email, round(score, 1), round(final_time, 1), " -> ".join(map(str, st.session_state["route"]))])
+                st.session_state["ranking_submitted"] = True
+                st.success("Wynik dodany do rankingu!")
+        else:
+            st.error("Podaj poprawny adres e-mail (musi zawierać '@' oraz kończyć się .com, .pl, .net, .org lub .edu).")
+
+# Wyświetl ranking
+if os.path.exists(ranking_file):
+    with open(ranking_file, "r", newline="") as f:
+        reader = csv.DictReader(f)
+        ranking_data = list(reader)
+    if ranking_data:
+        ranking_data = sorted(ranking_data, key=lambda x: float(x["Punkty"]), reverse=True)
+        st.table(ranking_data)
+    else:
+        st.write("Ranking jest pusty.")
+
+# Opcja administratora do czyszczenia rankingu
+admin_pass = st.text_input("Podaj hasło administratora, aby wyczyścić ranking:", type="password")
+if admin_pass == "Lama123":
+    if st.button("Wyczyść ranking"):
+        with open(ranking_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Email", "Punkty", "Czas", "Trasa"])
+        st.success("Ranking został wyczyszczony!")
