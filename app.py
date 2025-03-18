@@ -40,6 +40,7 @@ with st.sidebar:
         - [Samouczek](#samouczek)
         - [Wyzwanie](#wyzwanie)
         - [Teoria](#teoria)
+        - [Ranking](#ranking)
         """,
         unsafe_allow_html=True
     )
@@ -613,7 +614,7 @@ if st.button("Pokaż animację algorytmu Dijkstry"):
 #######################
 # Sekcja Ranking
 #######################
-st.markdown("### Ranking")
+st.markdown('<h2 id="ranking">Ranking</h2>', unsafe_allow_html=True)
 ranking_file = "ranking.csv"
 # Utwórz plik rankingowy, jeśli nie istnieje
 if not os.path.exists(ranking_file):
