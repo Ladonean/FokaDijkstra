@@ -330,7 +330,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {orig_31_7}
                 </div>
                 """
@@ -342,7 +342,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {orig_7_32}
                 </div>
                 """
@@ -489,7 +489,7 @@ else:
                 [mlat, mlon],
                 icon=DivIcon(
                     html=f"""
-                    <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
+                    <div style="font-size:16px;font-weight:bold;color:black;">
                         {tooltip_text}
                     </div>
                     """
