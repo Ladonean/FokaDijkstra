@@ -330,7 +330,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;">
+                <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
                     {orig_31_7}
                 </div>
                 """
@@ -342,7 +342,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;">
+                <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
                     {orig_7_32}
                 </div>
                 """
@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;  transform: translate(-40px, -40px);">
+                <div style="font-size:16px;font-weight:bold;color:black;  transform: translate(-100px, -100px);">
                     {tooltip_text}
                 </div>
                 """
@@ -489,7 +489,7 @@ else:
                 [mlat, mlon],
                 icon=DivIcon(
                     html=f"""
-                    <div style="font-size:16px;font-weight:bold;color:black;">
+                    <div style="font-size:16px;font-weight:bold;color:black;   transform: translate(-100px, -100px);">
                         {tooltip_text}
                     </div>
                     """
