@@ -52,9 +52,16 @@ st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij **bezpośrednio na marker** (czerwone kółko z numerem), aby go wybrać.  
 2. Obok mapy (w prawej kolumnie) pojawi się panel z obrazkiem, nazwą i przyciskiem „Wybierz punkt”.  
-3. Na początku dozwolony jest tylko punkt **12**.  
+3. Na początku dozwolony jest tylko punkt **12**. Po jego wybraniu losowo przypisywane są modyfikatory do wybranych krawędzi – mnożniki te zmieniają odległości dróg. Przykładowo, krawędź z mnożnikiem **1.4** staje się 1.4 razy dłuższa, a krawędź z mnożnikiem **0.6** jest skrócona.  
+   - Kolory modyfikatorów odpowiadają następującym wartościom:  
+     - **1.2**: pomarańczowy  
+     - **1.4**: czerwony  
+     - **1.6**: brązowy/bordowy  
+     - **0.8**: niebieski  
+     - **0.6**: zielony (odcień jaśniejszy niż zielony trasy najszybszej)  
+     - **0.4**: różowy (średni odcień)  
 4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto.  
-5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona), oraz podsumowanie (czas, łączna droga, lista punktów).
+5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.
 """)
 
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
@@ -209,12 +216,12 @@ if "edge_mods" not in st.session_state:
 #########################
 EDGE_MULTIPLIERS = [0.4, 0.6, 0.8, 1.2, 1.4, 1.6]
 COLOR_MAP = {
-    0.4: "pink",
-    0.6: "lightgreen",
-    0.8: "lightblue",
     1.2: "orange",
     1.4: "red",
-    1.6: "brown"
+    1.6: "brown",
+    0.8: "blue",
+    0.6: "palegreen",
+    0.4: "mediumvioletred"
 }
 
 #########################
@@ -367,6 +374,13 @@ if st.session_state["game_over"]:
         if final_time is not None:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
+        if user_dist > 0 and final_time > 0:
+            # Przykładowy system punktacji:
+            # Jeśli trasa użytkownika jest równa najkrótszej, a czas równy bazowemu (60s) → 100 punktów.
+            # Dłuższa trasa i/lub dłuższy czas skutkuje niższą oceną.
+            baseline_time = 60.0  # przyjęty czas bazowy
+            score = round(100 * (shortest_dist / user_dist) * (baseline_time / final_time))
+            st.write(f"Ocena: {score} punktów")
     with rightC:
         st.subheader("Najkrótsza (12→28)")
         if shortest_nodes:
