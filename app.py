@@ -73,7 +73,7 @@ punkty = {
     1: (475268, 723118), 2: (472798, 716990), 3: (478390, 727009),
     4: (476650, 725153), 5: (476622, 721571), 6: (477554, 720574),
     7: (474358.48, 724280.19),
-    8: (472331, 725750), 9: (465609, 730292),
+    8: (472297, 726195), 9: (465609, 730292),
     10: (474121, 727887), 11: (468217, 726296), 12: (465439, 724391),
     13: (465959, 719280), 14: (469257, 720007), 15: (473811, 717807),
     16: (475696, 717669), 17: (477528, 723238), 18: (483004, 720271),
@@ -154,7 +154,7 @@ for num, coord in punkty.items():
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
-    half_w = round(orig * 0.6, 1)
+    half_w = round(orig * 0.5, 1)
     if G.has_edge(u, v):
         G[u][v]["weight"] = min(G[u][v]["weight"], half_w)
     else:
@@ -219,13 +219,13 @@ COLOR_MAP = {
     1.2: "orange",
     1.4: "red",
     1.6: "brown",
-    0.8: "ligthblue",
+    0.8: "blue",
     0.6: "palegreen",
-    0.4: "pink"
+    0.4: "mediumvioletred"
 }
 
 #########################
-# Losowanie 12 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
+# Losowanie 6 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
 #########################
 def assign_modifiers_once():
     all_edges = []
@@ -316,7 +316,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     folium.PolyLine(
         locations=latlon_list,
         color="blue",
-        weight=5,
+        weight=4,
         dash_array="5,10"
     ).add_to(fmap)
     # Wyświetlamy oryginalne odległości dla krawędzi (31,7) oraz (7,32)
@@ -330,7 +330,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;">
+                <div style="font-size:14px;font-weight:bold;color:blue;">
                     {orig_31_7}
                 </div>
                 """
@@ -342,7 +342,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;">
+                <div style="font-size:14px;font-weight:bold;color:blue;">
                     {orig_7_32}
                 </div>
                 """
@@ -403,7 +403,7 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
-            weight=5,
+            weight=2,
             tooltip=tooltip_text
         ).add_to(final_map)
         mid_lat = (lat1 + lat2) / 2
@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;">
+                <div style="font-size:14px;font-weight:bold;color:{color};">
                     {tooltip_text}
                 </div>
                 """
@@ -439,14 +439,14 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=coords_user,
             color="yellow",
-            weight=5,
+            weight=4,
             tooltip="Twoja trasa"
         ).add_to(final_map)
     if shortest_nodes:
         coords_short = [latlon_nodes[n] for n in shortest_nodes]
         folium.PolyLine(
             locations=coords_short,
-            color="en",
+            color="green",
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
@@ -489,7 +489,7 @@ else:
                 [mlat, mlon],
                 icon=DivIcon(
                     html=f"""
-                    <div style="font-size:16px;font-weight:bold;color:black;">
+                    <div style="font-size:14px;font-weight:bold;color:{color};">
                         {tooltip_text}
                     </div>
                     """
@@ -522,7 +522,7 @@ else:
             if nx.has_path(G, 12, 28):
                 spn = nx.shortest_path(G, 12, 28, weight="weight")
                 coordsSP = [latlon_nodes[x] for x in spn]
-                folium.PolyLine(coordsSP, color="en", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
+                folium.PolyLine(coordsSP, color="green", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
         map_data = st_folium(main_map, width=800, height=600, returned_objects=["last_object_clicked_tooltip"])
     with col_info:
         st.subheader("Szczegóły punktu:")
