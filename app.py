@@ -411,7 +411,7 @@ if st.session_state["game_over"]:
         folium.Marker(
             [mid_lat, mid_lon],
             icon=DivIcon(
-                icon_anchor=(-40, -40),
+                icon_anchor=(-200, -200),
                 html=f"""
                 <div style="font-size:20px;font-weight:bold;color:{color};">
                     {tooltip_text}
@@ -489,6 +489,7 @@ else:
             folium.Marker(
                 [mlat, mlon],
                 icon=DivIcon(
+                    icon_anchor=(-200, -200),
                     html=f"""
                     <div style="font-size:14px;font-weight:bold;color:{color};">
                         {tooltip_text}
