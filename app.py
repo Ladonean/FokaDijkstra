@@ -225,7 +225,7 @@ COLOR_MAP = {
 }
 
 #########################
-# Losowanie 6 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
+# Losowanie 12 krawędzi (tylko raz) – specjalne krawędzie (31,7) i (7,32) pomijamy
 #########################
 def assign_modifiers_once():
     all_edges = []
@@ -403,7 +403,7 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
-            weight=2,
+            weight=3,
             tooltip=tooltip_text
         ).add_to(final_map)
         mid_lat = (lat1 + lat2) / 2
@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:{color};">
+                <div style="font-size:20px;font-weight:bold;color:{color};">
                     {tooltip_text}
                 </div>
                 """
@@ -446,7 +446,7 @@ if st.session_state["game_over"]:
         coords_short = [latlon_nodes[n] for n in shortest_nodes]
         folium.PolyLine(
             locations=coords_short,
-            color="green",
+            color="en",
             weight=5,
             tooltip="Najkrótsza (12->28)"
         ).add_to(final_map)
@@ -522,7 +522,7 @@ else:
             if nx.has_path(G, 12, 28):
                 spn = nx.shortest_path(G, 12, 28, weight="weight")
                 coordsSP = [latlon_nodes[x] for x in spn]
-                folium.PolyLine(coordsSP, color="green", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
+                folium.PolyLine(coordsSP, color="en", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
         map_data = st_folium(main_map, width=800, height=600, returned_objects=["last_object_clicked_tooltip"])
     with col_info:
         st.subheader("Szczegóły punktu:")
