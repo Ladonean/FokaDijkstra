@@ -379,7 +379,7 @@ if st.session_state["game_over"]:
             # Jeśli trasa użytkownika jest równa najkrótszej, a czas równy bazowemu (60s) → 100 punktów.
             # Dłuższa trasa i/lub dłuższy czas skutkuje niższą oceną.
             baseline_time = 30.0  # przyjęty czas bazowy
-            score = round(100 * (shortest_dist / user_dist) * (baseline_time / final_time))
+            score = 100 * (shortest_dist / user_dist) * (baseline_time / final_time)
             st.write(f"Ocena: {score} punktów")
     with rightC:
         st.subheader("Najkrótsza (12→28)")
