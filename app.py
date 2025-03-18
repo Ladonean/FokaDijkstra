@@ -219,9 +219,9 @@ COLOR_MAP = {
     1.2: "orange",
     1.4: "red",
     1.6: "brown",
-    0.8: "blue",
+    0.8: "lightblue",
     0.6: "palegreen",
-    0.4: "mediumvioletred"
+    0.4: "pink"
 }
 
 #########################
@@ -330,7 +330,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
+                <div style="font-size:16px;font-weight:bold;color:blue;">
                     {orig_31_7}
                 </div>
                 """
@@ -342,7 +342,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
+                <div style="font-size:16px;font-weight:bold;color:blue;">
                     {orig_7_32}
                 </div>
                 """
@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:{color};">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {tooltip_text}
                 </div>
                 """
@@ -489,7 +489,7 @@ else:
                 [mlat, mlon],
                 icon=DivIcon(
                     html=f"""
-                    <div style="font-size:14px;font-weight:bold;color:{color};">
+                    <div style="font-size:16px;font-weight:bold;color:black;">
                         {tooltip_text}
                     </div>
                     """
