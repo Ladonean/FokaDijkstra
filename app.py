@@ -154,7 +154,7 @@ for num, coord in punkty.items():
 special_edges = [(31, 7), (7, 32)]
 for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
-    half_w = round(orig * 0.5, 1)
+    half_w = round(orig * 0.6, 1)
     if G.has_edge(u, v):
         G[u][v]["weight"] = min(G[u][v]["weight"], half_w)
     else:
