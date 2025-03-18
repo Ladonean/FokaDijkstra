@@ -412,7 +412,7 @@ if st.session_state["game_over"]:
             [mid_lat, mid_lon],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:16px;font-weight:bold;color:black;  transform: translate(-100px, -100px);">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {tooltip_text}
                 </div>
                 """
