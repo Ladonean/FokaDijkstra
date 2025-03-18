@@ -219,7 +219,7 @@ COLOR_MAP = {
     1.2: "orange",
     1.4: "red",
     1.6: "brown",
-    0.8: "paleblue",
+    0.8: "ligthblue",
     0.6: "palegreen",
     0.4: "pink"
 }
@@ -316,7 +316,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     folium.PolyLine(
         locations=latlon_list,
         color="blue",
-        weight=4,
+        weight=5,
         dash_array="5,10"
     ).add_to(fmap)
     # Wyświetlamy oryginalne odległości dla krawędzi (31,7) oraz (7,32)
@@ -330,7 +330,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {orig_31_7}
                 </div>
                 """
@@ -342,7 +342,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
             [latm, lonm],
             icon=DivIcon(
                 html=f"""
-                <div style="font-size:14px;font-weight:bold;color:blue;">
+                <div style="font-size:16px;font-weight:bold;color:black;">
                     {orig_7_32}
                 </div>
                 """
@@ -403,7 +403,7 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=[[lat1, lon1], [lat2, lon2]],
             color=color,
-            weight=3,
+            weight=5,
             tooltip=tooltip_text
         ).add_to(final_map)
         mid_lat = (lat1 + lat2) / 2
@@ -439,7 +439,7 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=coords_user,
             color="yellow",
-            weight=4,
+            weight=5,
             tooltip="Twoja trasa"
         ).add_to(final_map)
     if shortest_nodes:
