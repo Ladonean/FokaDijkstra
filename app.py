@@ -219,9 +219,9 @@ COLOR_MAP = {
     1.2: "orange",
     1.4: "red",
     1.6: "brown",
-    0.8: "blue",
+    0.8: "paleblue",
     0.6: "palegreen",
-    0.4: "mediumvioletred"
+    0.4: "pink"
 }
 
 #########################
