@@ -382,7 +382,7 @@ if st.session_state["game_over"]:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
         if user_dist > 0 and final_time > 0:
-            baseline_time = 60.0  # przyjęty czas bazowy
+            baseline_time = 30.0  # przyjęty czas bazowy
             score = 100 * (shortest_dist / user_dist) * (baseline_time / final_time)
             st.write(f"Ocena: {score} punktów")
     with rightC:
