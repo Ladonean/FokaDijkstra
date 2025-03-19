@@ -58,10 +58,10 @@ st.write("""\
    - Kolory modyfikatorów odpowiadają następującym wartościom:  
      - **1.2**: pomarańczowy  
      - **1.4**: czerwony  
-     - **1.6**: brązowy/bordowy  
-     - **0.8**: lightblue  
-     - **0.6**: palegreen  
-     - **0.4**: pink  
+     - **1.6**: brązowy
+     - **0.8**: jasny niebieski
+     - **0.6**: jasny zielony
+     - **0.4**: różowy
 4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto.  
 5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.  
    
