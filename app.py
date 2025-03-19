@@ -543,7 +543,7 @@ else:
                 b64 = images_base64[clicked_id]
                 dataim = base64.b64decode(b64)
                 im = Image.open(io.BytesIO(dataim))
-                im.thumbnail((300, 300))
+                im.thumbnail((400, 400))
                 st.image(im)
                 st.write(f"**{node_names[clicked_id]}** (ID: {clicked_id})")
                 if not st.session_state["route"]:
