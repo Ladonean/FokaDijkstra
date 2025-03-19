@@ -133,7 +133,7 @@ def get_image_base64(path):
 
 images_base64 = {}
 for n in punkty.keys():
-    fname = f"img{n}.png"
+    fname = f"img_{n}.png"
     if os.path.exists(fname):
         images_base64[n] = get_image_base64(fname)
     else:
