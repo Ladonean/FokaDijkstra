@@ -616,11 +616,13 @@ else:
 
 st.markdown('<h2 id="teoria">Teoria</h2>', unsafe_allow_html=True)
 st.write("""\
-Algorytm Dijkstry wyznacza najkrótszą ścieżkę w grafie o nieujemnych wagach.
-Możesz myśleć o nim jak o szukaniu najtańszej trasy na mapie:
-- **węzły** to miasta,
-- **krawędzie** to drogi,
-- **waga** to długość/odległość.
+Algorytm Dijkstry pozwala na wyznaczenie najkrótszej trasy w grafach, których krawędzie mają przypisane nieujemne wagi (np. odległości, koszty przejazdu). Graf składa się z wierzchołków (punktów) połączonych krawędziami, które reprezentują możliwe przejścia pomiędzy punktami. Każda krawędź posiada przypisaną wagę określającą koszt jej przebycia, np. długość drogi lub czas przejazdu. Algorytm ten zaczyna od ustalenia źródła, czyli punktu początkowego, i stopniowo odwiedza kolejne wierzchołki, wybierając zawsze najbliższy jeszcze nieodwiedzony punkt. Dzięki temu znajduje optymalną drogę do wszystkich osiągalnych punktów grafu.
+
+W praktyce działanie algorytmu opiera się na przypisywaniu wszystkim wierzchołkom wstępnych odległości od źródła, przy czym odległość do źródła wynosi 0, a do pozostałych punktów – nieskończoność. Następnie, w każdym kroku wybierany jest wierzchołek z najmniejszą obecnie znaną odległością, a potem sprawdzani są jego bezpośredni sąsiedzi. Jeśli dotychczasowa droga do sąsiada jest dłuższa niż nowa proponowana trasa przez aktualny wierzchołek, odległość do tego sąsiada zostaje zaktualizowana. Proces ten powtarza się do momentu odwiedzenia wszystkich dostępnych punktów w grafie. W wyniku działania algorytmu znamy minimalne odległości od źródła do każdego punktu.
+
+Algorytm Dijkstry znajduje szerokie zastosowanie w codziennym życiu, zwłaszcza w systemach nawigacyjnych, gdzie wyznacza optymalną trasę przejazdu dla użytkowników GPS. W sieciach komputerowych algorytm stosowany jest do przesyłania danych najkrótszą lub najszybszą drogą, dzięki czemu pakiety danych skutecznie docierają do celu. Algorytm jest także używany w logistyce, np. przy planowaniu tras dostaw, zarządzaniu flotą pojazdów czy optymalizacji transportu towarów. W grach komputerowych wykorzystywany jest do znajdowania optymalnej ścieżki dla postaci sterowanych przez komputer, które omijają przeszkody i przemieszczają się efektywnie w świecie gry.
+
+Grafy, na których działa algorytm Dijkstry, można reprezentować na dwa popularne sposoby: za pomocą macierzy sąsiedztwa lub listy sąsiedztwa. Macierz sąsiedztwa to tablica, w której każda komórka określa wagę krawędzi łączącej odpowiednie wierzchołki; jeśli brak połączenia, komórka przyjmuje wartość nieskończoności. Lista sąsiedztwa natomiast zawiera dla każdego punktu grafu wykaz sąsiadujących z nim wierzchołków wraz z wagami prowadzących do nich krawędzi. Najkrótszą ścieżkę między dwoma punktami grafu definiuje się jako trasę o minimalnej sumie wag krawędzi łączących te punkty. Dzięki temu algorytm Dijkstry skutecznie znajduje optymalne rozwiązania w problemach opartych na analizie grafów.
 """)
 st.write("""\
 **Zastosowania**  
