@@ -686,3 +686,21 @@ if admin_pass == st.secrets.password:
             writer.writerow(["Email", "Punkty", "Czas", "Trasa"])
         st.success("Ranking został wyczyszczony!")
 
+st.markdown("""
+<style>
+.honorable {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: 3px solid #ff4081;
+    border-radius: 15px;
+    background: linear-gradient(90deg, #ff8a80, #ff80ab, #b388ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    margin: 20px;
+}
+</style>
+<h3 class="honorable">HONORABLE MENTION: Liwix, Martyszia, Szybka Kreska, Fifi, Basix, Idalix, Stefan</h3>
+""", unsafe_allow_html=True)
