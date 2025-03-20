@@ -164,7 +164,7 @@ for (u, v) in special_edges:
     orig = euclidean_distance_km(punkty[u], punkty[v])
     half_w = round(orig * 0.5, 1)
     if G.has_edge(u, v):
-        G[u][v]["weight"] = min(G[u][v]["weight"], half_w)
+        G[u][v]["weight"] = half_w
     else:
         G.add_edge(u, v, weight=half_w)
 
@@ -577,18 +577,19 @@ else:
                     last_node = st.session_state["route"][-1]
                     allowed = (clicked_id in G.neighbors(last_node))
                 if st.button("Wybierz punkt", key=f"btn_{clicked_id}", disabled=not allowed):
+                    # Jeśli to pierwszy ruch i punkt 12, przypisz modyfikatory
                     if not st.session_state["route"] and clicked_id == 12 and not st.session_state["modifiers_assigned"]:
                         assign_modifiers_once()
-                    if clicked_id not in st.session_state["route"]:
-                        st.session_state["route"].append(clicked_id)
-                        st.success(f"Dodano węzeł {clicked_id} ({node_names[clicked_id]}) do trasy!")
-                        st.session_state["map_center"] = latlon_nodes[clicked_id]
-                        st.session_state["map_zoom"] = 12.5
-                        if st.session_state["start_time"] is None:
-                            st.session_state["start_time"] = time.time()
-                        if clicked_id == 28:
-                            st.session_state["game_over"] = True
-                        st.rerun()
+                    # Zawsze dodajemy kliknięty węzeł do trasy, nawet jeśli już wcześniej był odwiedzony
+                    st.session_state["route"].append(clicked_id)
+                    st.success(f"Dodano węzeł {clicked_id} ({node_names[clicked_id]}) do trasy!")
+                    st.session_state["map_center"] = latlon_nodes[clicked_id]
+                    if st.session_state["start_time"] is None:
+                        st.session_state["start_time"] = time.time()
+                    if clicked_id == 28:
+                        st.session_state["game_over"] = True
+                    st.rerun()
+
             else:
                 st.warning("Kliknięto punkt spoza słownika węzłów.")
         else:
