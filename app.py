@@ -324,7 +324,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     folium.PolyLine(
         locations=latlon_list,
         color="blue",
-        weight=5,
+        weight=4,
         dash_array="5,10"
     ).add_to(fmap)
     # Wyświetlamy oryginalne odległości dla krawędzi (31,7) oraz (7,32)
@@ -507,7 +507,7 @@ else:
             folium.PolyLine(
                 [[lat1, lon1], [lat2, lon2]],
                 color=color,
-                weight=5,
+                weight=4,
                 tooltip=tooltip_text
             ).add_to(main_map)
             mlat = (lat1 + lat2) / 2
@@ -540,7 +540,7 @@ else:
             ).add_to(main_map)
         if st.session_state["route"]:
             coords_user = [latlon_nodes[x] for x in st.session_state["route"]]
-            folium.PolyLine(coords_user, color="yellow", weight=5, tooltip="Twoja trasa").add_to(main_map)
+            folium.PolyLine(coords_user, color="yellow", weight=4, tooltip="Twoja trasa").add_to(main_map)
         node7_xy = punkty[7]
         node31_xy = punkty[31]
         node32_xy = punkty[32]
@@ -549,7 +549,7 @@ else:
             if nx.has_path(G, 12, 28):
                 spn = nx.shortest_path(G, 12, 28, weight="weight")
                 coordsSP = [latlon_nodes[x] for x in spn]
-                folium.PolyLine(coordsSP, color="green", weight=5, tooltip="Najkrótsza (12->28)").add_to(main_map)
+                folium.PolyLine(coordsSP, color="green", weight=4, tooltip="Najkrótsza (12->28)").add_to(main_map)
         map_data = st_folium(main_map, width=800, height=600, returned_objects=["last_object_clicked_tooltip"])
     with col_info:
         st.subheader("Szczegóły punktu:")
