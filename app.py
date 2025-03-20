@@ -367,13 +367,31 @@ if st.session_state["game_over"]:
     user_dist = total_user_distance(st.session_state["route"])
     route_named = [f"{r} ({node_names[r]})" for r in st.session_state["route"]]
 
-    shortest_nodes = []
-    shortest_dist = 0.0
-    if nx.has_path(G, 12, 28):
-        sp = nx.shortest_path(G, 12, 28, weight="weight")
-        for i in range(len(sp) - 1):
-            shortest_dist += G[sp[i]][sp[i+1]]["weight"]
-        shortest_nodes = sp
+    # Obliczanie najkrótszej trasy z wymaganymi punktami (3 i 19)
+    route1, weight1 = None, float('inf')
+    if nx.has_path(G, 12, 3) and nx.has_path(G, 3, 19) and nx.has_path(G, 19, 28):
+        route1a = nx.shortest_path(G, 12, 3, weight="weight")
+        route1b = nx.shortest_path(G, 3, 19, weight="weight")
+        route1c = nx.shortest_path(G, 19, 28, weight="weight")
+        # Łączymy trasy (pomijając duplikaty punktów)
+        route1 = route1a + route1b[1:] + route1c[1:]
+        weight1 = sum(G[route1[i]][route1[i+1]]["weight"] for i in range(len(route1)-1))
+
+    route2, weight2 = None, float('inf')
+    if nx.has_path(G, 12, 19) and nx.has_path(G, 19, 3) and nx.has_path(G, 3, 28):
+        route2a = nx.shortest_path(G, 12, 19, weight="weight")
+        route2b = nx.shortest_path(G, 19, 3, weight="weight")
+        route2c = nx.shortest_path(G, 3, 28, weight="weight")
+        route2 = route2a + route2b[1:] + route2c[1:]
+        weight2 = sum(G[route2[i]][route2[i+1]]["weight"] for i in range(len(route2)-1))
+
+    # Wybieramy trasę o mniejszej wadze
+    if weight1 <= weight2:
+        required_route = route1
+        required_weight = weight1
+    else:
+        required_route = route2
+        required_weight = weight2
 
     leftC, rightC = st.columns(2)
     with leftC:
@@ -384,16 +402,20 @@ if st.session_state["game_over"]:
         st.write(f"Łączna droga: {user_dist:.1f} km")
         if user_dist > 0 and final_time > 0:
             baseline_time = 45.0  # przyjęty czas bazowy
-            score = 100 * (shortest_dist / user_dist) * (baseline_time / final_time)
+            score = 100 * (required_weight / user_dist) * (baseline_time / final_time)
+            # Jeśli użytkownik nie odwiedził wymaganych punktów 3 i 19, odejmujemy 25 punktów
+            if 3 not in st.session_state["route"] or 19 not in st.session_state["route"]:
+                score -= 25
+                st.write("Nie odwiedzono wszystkich wymaganych punktów (3 i 19). Kara -25 punktów.")
             st.write(f"Ocena: {score} punktów")
     with rightC:
-        st.subheader("Najkrótsza (12→28)")
-        if shortest_nodes:
-            srt = [f"{x} ({node_names[x]})" for x in shortest_nodes]
+        st.subheader("Najkrótsza trasa (12→28 z punktami 3 i 19)")
+        if required_route:
+            srt = [f"{x} ({node_names[x]})" for x in required_route]
             st.write("Punkty:", srt)
-            st.write(f"Łączna droga: {shortest_dist:.1f} km")
+            st.write(f"Łączna droga: {required_weight:.1f} km")
         else:
-            st.write("Brak ścieżki w grafie.")
+            st.write("Brak ścieżki spełniającej wymaganie (przez 3 i 19).")
 
     st.markdown("#### Finalna mapa:")
     final_map = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"])
