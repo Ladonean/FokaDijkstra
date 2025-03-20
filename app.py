@@ -17,7 +17,7 @@ import csv
 # Ustawienia strony
 ############################
 st.set_page_config(
-    page_title="Mapa Zadanie: 12 → 28",
+    page_title="FOKA Algorytm Dijsktry",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,10 +45,10 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-st.title("Zadanie: Najkrótsza droga od węzła 12 do 28")
+st.title("Hej! Twoim zadaniem jest znaleźć najkrószą trasę.")
 
 st.markdown('<h2 id="start">Start</h2>', unsafe_allow_html=True)
-st.write("Witamy w aplikacji! Aby rozpocząć, wybierz punkt **12** jako start.")
+st.write("Wylądowałeś w Gdańsku w Porcie Lotniczym (12) musisz znaleźć pomnik wielkiego wieszcza oraz bohaterskich żołnierzy. Na koniec musisz znaleźć się w najbardziej wysuniętym na wschód punkcie Gdańska")
 
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
@@ -67,8 +67,8 @@ st.write("""\
    
    **System oceny:**  
    Twoja ocena obliczana jest według wzoru:  
-   &nbsp;&nbsp;&nbsp;&nbsp;**Ocena = 100 · (najkrótsza_trasa / Twoja_trasa) · (30 / czas)**  
-   Przy założeniu czasu bazowego 30 s, gdy Twoja trasa jest najkrótsza, uzyskujesz 100 punktów. Im dłuższa trasa lub większy czas, tym niższa ocena.
+   &nbsp;&nbsp;&nbsp;&nbsp;**Ocena = 100 · (najkrótsza_trasa / Twoja_trasa) · (45 / czas)**  
+   Przy założeniu czasu bazowego 45 s, gdy Twoja trasa jest najkrótsza, uzyskujesz 100 punktów. Im dłuższa trasa lub większy czas, tym niższa ocena.
 """)
 
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
@@ -382,7 +382,7 @@ if st.session_state["game_over"]:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
         if user_dist > 0 and final_time > 0:
-            baseline_time = 30.0  # przyjęty czas bazowy
+            baseline_time = 45.0  # przyjęty czas bazowy
             score = 100 * (shortest_dist / user_dist) * (baseline_time / final_time)
             st.write(f"Ocena: {score} punktów")
     with rightC:
@@ -560,7 +560,7 @@ else:
                         st.session_state["route"].append(clicked_id)
                         st.success(f"Dodano węzeł {clicked_id} ({node_names[clicked_id]}) do trasy!")
                         st.session_state["map_center"] = latlon_nodes[clicked_id]
-                        st.session_state["map_zoom"] = 13
+                        st.session_state["map_zoom"] = 12.5
                         if st.session_state["start_time"] is None:
                             st.session_state["start_time"] = time.time()
                         if clicked_id == 28:
