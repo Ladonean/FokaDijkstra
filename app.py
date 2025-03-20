@@ -48,8 +48,10 @@ with st.sidebar:
 st.title("Hej! Twoim zadaniem jest znaleźć najkrószą trasę.")
 
 st.markdown('<h2 id="start">Start</h2>', unsafe_allow_html=True)
-st.write("Wylądowałeś w Gdańsku w Porcie Lotniczym (12) musisz znaleźć pomnik wielkiego wieszcza oraz bohaterskich żołnierzy. Na koniec musisz znaleźć się w najbardziej wysuniętym na wschód punkcie Gdańska")
-
+st.markdown(
+    "<h3 style='text-align: center; font-size:24px;'>Wylądowałeś w Gdańsku w Porcie Lotniczym (12). Musisz znaleźć pomnik wielkiego wieszcza oraz bohaterskich żołnierzy. Na koniec musisz znaleźć się w najbardziej wysuniętym na wschód punkcie Gdańska.</h3>", 
+    unsafe_allow_html=True
+)
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij **bezpośrednio na marker** (czerwone kółko z numerem), aby go wybrać.  
