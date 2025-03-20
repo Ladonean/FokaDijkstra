@@ -62,8 +62,9 @@ st.write("""\
      - **0.8**: jasny niebieski
      - **0.6**: jasny zielony
      - **0.4**: różowy
-4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto.  
-5. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.  
+4. Dodawaj kolejne punkty (muszą być sąsiadami poprzedniego); trasa rysowana jest na żółto. 
+5. W Gdańsku funkcjonuje Szybka Kolej Miejska (SKM). Trasa między punktami 31, 7 i 32 ma mnożnik 0.5 zawsze :)
+6. Gdy w trasie pojawi się punkt **28**, gra się kończy – wyświetlony zostanie finalny widok z Twoją trasą (żółta) i najkrótszą (zielona) oraz podsumowanie: czas, łączna droga, lista punktów i ocena punktowa.  
    
    **System oceny:**  
    Twoja ocena obliczana jest według wzoru:  
