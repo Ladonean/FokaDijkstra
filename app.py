@@ -469,13 +469,13 @@ if st.session_state["game_over"]:
             weight=4,
             tooltip="Twoja trasa"
         ).add_to(final_map)
-    if shortest_nodes:
-        coords_short = [latlon_nodes[n] for n in shortest_nodes]
+    if required_route:
+        coords_short = [latlon_nodes[n] for n in required_route]
         folium.PolyLine(
             locations=coords_short,
             color="green",
             weight=5,
-            tooltip="Najkrótsza (12->28)"
+            tooltip="Najkrótsza (12→28 z punktami 3 i 19)"
         ).add_to(final_map)
     # Rysujemy niebieską trasę 31->7->32 – wyświetlamy oryginalne odległości, bo te krawędzie nie mają modyfikatora
     node7_xy = punkty[7]
@@ -672,9 +672,10 @@ if os.path.exists(ranking_file):
 
 # Opcja administratora do czyszczenia rankingu
 admin_pass = st.text_input("Podaj hasło administratora, aby wyczyścić ranking:", type="password")
-if admin_pass == "Lama123":
+if admin_pass == st.secrets.password:
     if st.button("Wyczyść ranking"):
         with open(ranking_file, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["Email", "Punkty", "Czas", "Trasa"])
         st.success("Ranking został wyczyszczony!")
+
