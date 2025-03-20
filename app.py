@@ -94,23 +94,23 @@ punkty = {
 }
 
 node_names = {
-    1: "PG",
+    1: "Politechnika Gdańska",
     2: "Parkrun Gdańsk Południe",
     3: "Pomnik Obrońców Wybrzeża",
     4: "Bursztynowy",
     5: "Góra Gradowa",
     6: "Posejdon",
     7: "Gdańsk Wrzeszcz",
-    8: "UG",
+    8: "Uniwersytet Gdański",
     9: "Parkrun Gdańsk Osowa",
     10: "Parkrun Gdańsk Regana",
     11: "Trójmiejski Park Krajobrazowy",
-    12: "Lotnisko",
+    12: "Port Lotniczy",
     13: "Las Otomiński",
     14: "Jezioro Jasień",
     15: "Kozacza Góra",
     16: "Park Oruński",
-    17: "Stocznia Remontowa",
+    17: "Stocznia Gdańska",
     18: "Rafineria",
     19: "Pomnik Mickiewicza",
     20: "Dwór Olszynka",
@@ -589,8 +589,6 @@ else:
                         if clicked_id == 28:
                             st.session_state["game_over"] = True
                         st.rerun()
-                    else:
-                        st.warning("Ten węzeł już jest w trasie.")
             else:
                 st.warning("Kliknięto punkt spoza słownika węzłów.")
         else:
