@@ -649,6 +649,10 @@ if not os.path.exists(ranking_file):
 # Jeśli gra się zakończyła i użytkownik nie dodał jeszcze wyniku, pozwól na podanie e-maila
 if st.session_state.get("game_over", False) and not st.session_state.get("ranking_submitted", False):
     user_email = st.text_input("Podaj swój e-mail, aby dodać swój wynik do rankingu:")
+    st.markdown(
+    "<h3 style='text-align: center; font-size:4px;'>Wyrażam zgodę na przetwarzanie moich danych osobowych przez [KN HEVELIUS] w celu wzięcia udziału w konkursie, zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. (RODO). Mam świadomość, że podanie danych jest dobrowolne oraz że przysługuje mi prawo do dostępu do moich danych, ich poprawiania, usunięcia oraz wycofania zgody w dowolnym momencie.</h3>", 
+    unsafe_allow_html=True
+    )
     if user_email:
         if "@" in user_email and user_email.endswith((".com", ".pl", ".net", ".org", ".edu")):
             if st.button("Dodaj do rankingu"):
