@@ -698,5 +698,5 @@ st.markdown("""
     background: linear-gradient(90deg, #ff8a80, #ff80ab, #b388ff);
 }
 </style>
-<h3 class="honorable">Patroni niekoniecznie medialni: Liwix, Martyszia, Szybka Kreska, Fifi, Basix, Idalix, Stefan</h3>
+<h3 class="honorable">Patroni niekoniecznie medialni: Liwix, Martyszia, Szybka Kreska, Fifi, Basix, Idalix, Martyna, Adam, Stefan</h3>
 """, unsafe_allow_html=True)
