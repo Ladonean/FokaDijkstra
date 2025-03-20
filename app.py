@@ -54,7 +54,7 @@ st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
 st.write("""\
 1. Kliknij **bezpośrednio na marker** (czerwone kółko z numerem), aby go wybrać.  
 2. Obok mapy (w prawej kolumnie) pojawi się panel z obrazkiem, nazwą i przyciskiem „Wybierz punkt”.  
-3. Na początku dozwolony jest tylko punkt **12**. Po jego wybraniu losowo przypisywane są modyfikatory do wybranych krawędzi – mnożniki te zmieniają odległości dróg. Przykładowo, krawędź z mnożnikiem **1.4** staje się 1.4 razy dłuższa, a krawędź z mnożnikiem **0.6** – skrócona.  
+3. Na początku dozwolony jest tylko punkt **12**. Po jego wybraniu w Gdańsku wystąpią losowe korki bądź przyspieszenia – mnożniki te zmieniają odległości dróg. Przykładowo, krawędź z mnożnikiem **1.4** staje się 1.4 razy dłuższa, a krawędź z mnożnikiem **0.6** – skrócona.  
    - Kolory modyfikatorów odpowiadają następującym wartościom:  
      - **1.2**: pomarańczowy  
      - **1.4**: czerwony  
@@ -68,8 +68,8 @@ st.write("""\
    
    **System oceny:**  
    Twoja ocena obliczana jest według wzoru:  
-   &nbsp;&nbsp;&nbsp;&nbsp;**Ocena = 100 · (najkrótsza_trasa / Twoja_trasa) · (45 / czas)**  
-   Przy założeniu czasu bazowego 45 s, gdy Twoja trasa jest najkrótsza, uzyskujesz 100 punktów. Im dłuższa trasa lub większy czas, tym niższa ocena.
+   &nbsp;&nbsp;&nbsp;&nbsp;**Ocena = 100 · (najkrótsza_trasa / Twoja_trasa) · (60 / czas)**  
+   Przy założeniu czasu bazowego 60 s, gdy Twoja trasa jest najkrótsza, uzyskujesz 100 punktów. Im dłuższa trasa lub większy czas, tym niższa ocena.
 """)
 
 st.markdown('<h2 id="wyzwanie">Wyzwanie</h2>', unsafe_allow_html=True)
@@ -100,7 +100,7 @@ node_names = {
     4: "Bursztynowy",
     5: "Góra Gradowa",
     6: "Posejdon",
-    7: "Gdańsk Wrzeszcz",
+    7: "SKM Gdańsk Wrzeszcz",
     8: "Uniwersytet Gdański",
     9: "Parkrun Gdańsk Osowa",
     10: "Parkrun Gdańsk Regana",
@@ -111,12 +111,12 @@ node_names = {
     15: "Kozacza Góra",
     16: "Park Oruński",
     17: "Stocznia Gdańska",
-    18: "Rafineria",
+    18: "Rafineria Orlen",
     19: "Pomnik Mickiewicza",
     20: "Dwór Olszynka",
     21: "Park Ferberów",
     22: "Sanktuarium Matemblewo",
-    23: "ZOO",
+    23: "Gdańskie ZOO",
     24: "Zbiornik Łabędzia",
     25: "Plaża Stogi",
     26: "Molo Brzeźno",
@@ -124,8 +124,8 @@ node_names = {
     28: "Punkt Widokowy Sobieszewo Mewia Łacha",
     29: "Marina Przełom",
     30: "Prom Świbno",
-    31: "Gdańsk Oliwa",
-    32: "Gdańsk Śródmieście"
+    31: "SKM Gdańsk Oliwa",
+    32: "SKM Gdańsk Śródmieście"
 }
 
 def get_image_base64(path):
