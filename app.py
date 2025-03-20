@@ -324,7 +324,7 @@ def draw_single_line_31_7_32(fmap, pts_2180, node31_xy, node7_xy, node32_xy):
     folium.PolyLine(
         locations=latlon_list,
         color="blue",
-        weight=4,
+        weight=5,
         dash_array="5,10"
     ).add_to(fmap)
     # Wyświetlamy oryginalne odległości dla krawędzi (31,7) oraz (7,32)
@@ -401,7 +401,7 @@ if st.session_state["game_over"]:
             st.write(f"Czas: {final_time:.1f} s")
         st.write(f"Łączna droga: {user_dist:.1f} km")
         if user_dist > 0 and final_time > 0:
-            baseline_time = 45.0  # przyjęty czas bazowy
+            baseline_time = 60.0  # przyjęty czas bazowy
             score = 100 * (required_weight / user_dist) * (baseline_time / final_time)
             # Jeśli użytkownik nie odwiedził wymaganych punktów 3 i 19, odejmujemy 25 punktów
             if 3 not in st.session_state["route"] or 19 not in st.session_state["route"]:
@@ -466,7 +466,7 @@ if st.session_state["game_over"]:
         folium.PolyLine(
             locations=coords_user,
             color="yellow",
-            weight=4,
+            weight=5,
             tooltip="Twoja trasa"
         ).add_to(final_map)
     if required_route:
@@ -507,7 +507,7 @@ else:
             folium.PolyLine(
                 [[lat1, lon1], [lat2, lon2]],
                 color=color,
-                weight=3,
+                weight=5,
                 tooltip=tooltip_text
             ).add_to(main_map)
             mlat = (lat1 + lat2) / 2
@@ -540,7 +540,7 @@ else:
             ).add_to(main_map)
         if st.session_state["route"]:
             coords_user = [latlon_nodes[x] for x in st.session_state["route"]]
-            folium.PolyLine(coords_user, color="yellow", weight=4, tooltip="Twoja trasa").add_to(main_map)
+            folium.PolyLine(coords_user, color="yellow", weight=5, tooltip="Twoja trasa").add_to(main_map)
         node7_xy = punkty[7]
         node31_xy = punkty[31]
         node32_xy = punkty[32]
