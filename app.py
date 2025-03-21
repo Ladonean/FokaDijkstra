@@ -17,7 +17,7 @@ import csv
 # Ustawienia strony
 ############################
 st.set_page_config(
-    page_title="FOKA Algorytm Dijsktry",
+    page_title="FOKA Algorytm Dijkstry",
     layout="wide",
     initial_sidebar_state="expanded"
 )
