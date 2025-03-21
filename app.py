@@ -49,7 +49,7 @@ st.title("Hej! Twoim zadaniem jest znaleźć najkrószą trasę.")
 
 st.markdown('<h2 id="start">Start</h2>', unsafe_allow_html=True)
 st.markdown(
-    "<h3 style='text-align: center; font-size:24px;'>Wylądowałeś w Gdańsku w Porcie Lotniczym (12). Musisz znaleźć pomnik wielkiego wieszcza oraz bohaterskich żołnierzy. Na koniec musisz znaleźć się w najbardziej wysuniętym na wschód punkcie Gdańska.</h3>", 
+    "<h3 style='text-align: center; font-size:24px;'>Wylądowałeś w Gdańsku w Porcie Lotniczym (12). Musisz znaleźć pomnik wielkiego wieszcza oraz bohaterskich żołnierzy. Na koniec musisz znaleźć się w najbardziej wysuniętym na wschód punkcie Gdańska. NIE KLIKAJ NIC PO DOJŚCIU DO PUNKTU 28 poczekaj na wprowadzeniu maila.</h3>", 
     unsafe_allow_html=True
 )
 st.markdown('<h2 id="samouczek">Samouczek</h2>', unsafe_allow_html=True)
